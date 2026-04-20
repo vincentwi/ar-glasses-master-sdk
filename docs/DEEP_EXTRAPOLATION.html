@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEEP EXTRAPOLATION — Vincent Roy's AR Glasses Thesis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0a0e14;
+  --bg-card: rgba(16, 24, 36, 0.75);
+  --bg-glass: rgba(20, 30, 48, 0.55);
+  --border-glass: rgba(0, 255, 170, 0.15);
+  --green: #00ffaa;
+  --cyan: #00e5ff;
+  --green-dim: rgba(0, 255, 170, 0.3);
+  --cyan-dim: rgba(0, 229, 255, 0.2);
+  --text: #e0e8f0;
+  --text-dim: #8899aa;
+  --text-bright: #ffffff;
+  --red: #ff4466;
+  --yellow: #ffcc00;
+  --orange: #ff8844;
+  --purple: #aa66ff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg-dark);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(0, 255, 170, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(0, 229, 255, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(170, 102, 255, 0.02) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 40px 20px 20px;
+  position: relative;
+  z-index: 1;
+}
+.header h1 {
+  font-size: 2.2em;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--green), var(--cyan), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
+}
+.header .subtitle {
+  color: var(--text-dim);
+  font-size: 0.85em;
+  margin-top: 8px;
+  font-weight: 300;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 20px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 14, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glass);
+}
+.tab-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65em;
+  font-weight: 500;
+  padding: 8px 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+.tab-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+  transform: translateY(-1px);
+}
+.tab-btn.active {
+  background: rgba(0, 255, 170, 0.1);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 20px rgba(0, 255, 170, 0.15);
+}
+
+/* Tab Content */
+.tab-content { display: none; position: relative; z-index: 1; }
+.tab-content.active { display: block; }
+.tab-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 30px 60px;
+}
+
+/* Glass Cards */
+.glass-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 30px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(15px);
+  transition: border-color 0.3s ease;
+}
+.glass-card:hover { border-color: rgba(0, 255, 170, 0.3); }
+.glass-card h2 {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.glass-card h3 {
+  font-size: 1.05em;
+  font-weight: 600;
+  color: var(--cyan);
+  margin: 20px 0 10px;
+}
+.glass-card h4 {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--yellow);
+  margin: 16px 0 8px;
+}
+.glass-card p {
+  line-height: 1.75;
+  font-size: 0.85em;
+  font-weight: 300;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+/* Quote Block */
+.quote-block {
+  border-left: 3px solid var(--green);
+  padding: 16px 20px;
+  margin: 16px 0;
+  background: rgba(0, 255, 170, 0.04);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--green);
+  font-size: 0.9em;
+}
+.quote-block .attr {
+  font-style: normal;
+  color: var(--text-dim);
+  font-size: 0.85em;
+  margin-top: 8px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78em;
+  margin: 16px 0;
+}
+th {
+  background: rgba(0, 255, 170, 0.08);
+  color: var(--green);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border-glass);
+  white-space: nowrap;
+}
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: var(--text);
+  font-weight: 300;
+  vertical-align: top;
+}
+tr:hover td { background: rgba(0, 255, 170, 0.03); }
+
+/* Tags / Badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  font-weight: 600;
+}
+.badge-green { background: rgba(0,255,170,0.15); color: var(--green); }
+.badge-red { background: rgba(255,68,102,0.15); color: var(--red); }
+.badge-yellow { background: rgba(255,204,0,0.15); color: var(--yellow); }
+.badge-cyan { background: rgba(0,229,255,0.15); color: var(--cyan); }
+.badge-purple { background: rgba(170,102,255,0.15); color: var(--purple); }
+.badge-orange { background: rgba(255,136,68,0.15); color: var(--orange); }
+
+/* Chain Diagram */
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 12px 0;
+  font-size: 0.78em;
+}
+.chain-node {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 400;
+  color: var(--text);
+}
+.chain-arrow { color: var(--green); font-weight: 700; font-size: 1.2em; }
+
+/* Contrarian Card */
+.contrarian-card {
+  background: rgba(255, 68, 102, 0.04);
+  border: 1px solid rgba(255, 68, 102, 0.15);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.contrarian-card h3 {
+  color: var(--red);
+  font-size: 1em;
+  margin-bottom: 12px;
+}
+.contrarian-card p { font-size: 0.82em; }
+
+/* Blind spot card */
+.blind-card {
+  background: rgba(255, 204, 0, 0.04);
+  border: 1px solid rgba(255, 204, 0, 0.15);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.blind-card h3 { color: var(--yellow); }
+.blind-card .severity {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  font-weight: 700;
+  margin-left: 8px;
+}
+.sev-critical { background: rgba(255,68,102,0.2); color: var(--red); }
+.sev-high { background: rgba(255,136,68,0.2); color: var(--orange); }
+.sev-medium { background: rgba(255,204,0,0.2); color: var(--yellow); }
+
+/* Chart container */
+.chart-wrap {
+  background: rgba(10, 14, 20, 0.5);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  max-height: 400px;
+  position: relative;
+}
+.chart-wrap canvas { max-height: 360px; }
+
+/* Level indicator */
+.level-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: start;
+}
+.level-label {
+  font-weight: 700;
+  font-size: 0.9em;
+  padding: 12px 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+.level-1 { background: rgba(0,255,170,0.1); color: var(--green); border: 1px solid rgba(0,255,170,0.2); }
+.level-2 { background: rgba(0,229,255,0.1); color: var(--cyan); border: 1px solid rgba(0,229,255,0.2); }
+.level-3 { background: rgba(170,102,255,0.1); color: var(--purple); border: 1px solid rgba(170,102,255,0.2); }
+.level-4 { background: rgba(255,204,0,0.1); color: var(--yellow); border: 1px solid rgba(255,204,0,0.2); }
+
+/* Moat meter */
+.moat-meter {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+  margin: 4px 0;
+}
+.moat-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* Money path card */
+.money-card {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.money-rank {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: var(--green);
+  text-align: center;
+}
+.money-rev {
+  text-align: right;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+
+@media (max-width: 768px) {
+  .tab-btn { font-size: 0.58em; padding: 6px 8px; }
+  .tab-panel { padding: 10px 16px 40px; }
+  .glass-card { padding: 18px; }
+  .level-row { grid-template-columns: 1fr; }
+  .money-card { grid-template-columns: 40px 1fr 80px; }
+  table { font-size: 0.7em; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>◈ DEEP EXTRAPOLATION ◈</h1>
+  <div class="subtitle">14 Dimensions of Vincent Roy's AR Glasses Thesis &mdash; Generated April 2026</div>
+</div>
+
+<div class="tab-nav" id="tabNav">
+  <button class="tab-btn active" onclick="showTab(0)">THE THESIS</button>
+  <button class="tab-btn" onclick="showTab(1)">ACQUISITION MAP</button>
+  <button class="tab-btn" onclick="showTab(2)">CONTRARIAN TAKES</button>
+  <button class="tab-btn" onclick="showTab(3)">BLIND SPOTS</button>
+  <button class="tab-btn" onclick="showTab(4)">MOAT ANALYSIS</button>
+  <button class="tab-btn" onclick="showTab(5)">MARKET MAP</button>
+  <button class="tab-btn" onclick="showTab(6)">TECH DEBT</button>
+  <button class="tab-btn" onclick="showTab(7)">VINCENT'S EDGE</button>
+  <button class="tab-btn" onclick="showTab(8)">MORPHIC RESONANCE</button>
+  <button class="tab-btn" onclick="showTab(9)">2ND ORDER EFFECTS</button>
+  <button class="tab-btn" onclick="showTab(10)">THE MONEY PATH</button>
+  <button class="tab-btn" onclick="showTab(11)">REFERENCES</button>
+  <button class="tab-btn" onclick="showTab(12)">NOTE WEIGHTS</button>
+  <button class="tab-btn" onclick="showTab(13)">ÜBERMENSCH</button>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 0: THE THESIS -->
+<!-- ============================================================ -->
+<div class="tab-content active" id="tab0">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ THE UNIFIED WEARABLE AI THESIS</h2>
+  <p>Vincent Roy's thesis is not about building another gadget. It is about constructing the <strong>interface layer between human consciousness and artificial intelligence</strong> — worn on the body, always present, contextually aware, and philosophically grounded in a framework that most hardware engineers would never think to invoke: Maslow's hierarchy of needs, emotional intelligence theory, Samkhya philosophy, and Nietzsche's Übermensch.</p>
+
+  <div class="quote-block">
+    "Context is the product. Integration and structure of information is the moat."
+    <div class="attr">— Vincent Roy, Apple Notes (Wearable Thesis)</div>
+  </div>
+
+  <p>This single sentence encapsulates the entire strategy. In a world where every major company is racing to add more features, more sensors, more pixels to their AR glasses, Vincent argues the opposite: <strong>the value is not in what the device can do, but in what it knows about you.</strong> An AR display showing directions is Google Maps with extra steps. An AR display that knows you're anxious because your HRV dropped, that you skipped lunch, that you have a difficult meeting in 20 minutes, and that gently shifts the ambient lighting of your field of view to calm blue-green while suggesting you take three deep breaths — that's a different product category entirely.</p>
+
+  <div class="quote-block">
+    "They don't want Jarvis. They want to feel like Tony Stark."
+    <div class="attr">— Vincent Roy, Apple Notes (Startup Ideas)</div>
+  </div>
+
+  <p>This insight separates Vincent from 99% of builders in the space. The aspiration is not functional but <em>ontological</em>. Users don't want a better assistant. They want to feel augmented. They want to feel powerful, capable, and in flow. The glasses are not the product — <strong>the transformation of self-perception is the product.</strong></p>
+
+  <h3>The Sovereign AI Stack</h3>
+  <p>The architecture Vincent envisions is a <strong>sovereign AI stack</strong> — sovereign meaning the user owns their model, their data, their context graph. Not a cloud-dependent assistant that stops working when the server goes down, but an on-device intelligence that accumulates understanding over years. The ring captures biometric ground truth (HRV, SpO2, skin temperature, EMG gesture). The glasses provide the sensory interface (vision, audio, spatial awareness). The local LLM processes it all without sending data to anyone. This is directly opposed to the Meta model (all data flows to Menlo Park) and the Apple model (privacy through limitation rather than capability).</p>
+
+  <h3>The Four-Level Philosophy Mapped to Hardware</h3>
+
+  <div class="level-row">
+    <div class="level-label level-1">Level 1<br/>INTUITION</div>
+    <div>
+      <p><strong>Glasses capability:</strong> Raw sensor input — camera, microphone, IMU, eye tracking. The device begins to perceive. At this level, the glasses are a recording device, a transcription engine, a basic overlay. They capture what the user sees and hears. <strong>Hardware parallel:</strong> Even AI Glasses, Brilliant Frame, basic HUDs. No intelligence yet — just enhanced perception. Like a meditator first learning to notice their breath.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-2">Level 2<br/>EQUANIMITY</div>
+    <div>
+      <p><strong>Glasses capability:</strong> Emotional regulation layer. The ring's HRV data feeds a real-time stress model. The glasses respond: adjusting notification frequency, dimming the display, shifting audio EQ to calming frequencies, or projecting a subtle breathing guide into peripheral vision. The device becomes a <strong>co-regulator</strong> — exactly what a good therapist does. Vincent's own polyvagal therapy work maps directly here: the glasses detect sympathetic activation (fight/flight) and gently nudge toward ventral vagal (calm, connected). This is where Vincent's edge lives — he's done the therapeutic work himself, he knows what "regulation" actually feels like in the body.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-3">Level 3<br/>UNITY</div>
+    <div>
+      <p><strong>Glasses capability:</strong> Mesh intelligence — multiple glasses wearers sharing context. Co-discovery, shared spatial annotations, collective memory. The individual sovereign AI begins to federate with others. Vincent's concept of "computational memetics" activates here: ideas propagate through the mesh not as text but as <strong>structured context objects</strong> that carry emotional valence, source attribution, and confidence scores. The Kashmir Shaivism concept of universal consciousness (Chiti) finds its technological expression — not literally, but as a design principle: every node in the mesh is both individual and connected.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-4">Level 4<br/>ÜBERMENSCH</div>
+    <div>
+      <p><strong>Glasses capability:</strong> Full cognitive augmentation. The device doesn't just assist — it <strong>extends the boundaries of what you can perceive, remember, and decide.</strong> Perfect memory. Instant translation (Vincent's "Smile" concept — speech-to-speech translation). Emotional X-ray (reading microexpressions + voice biomarkers in real-time). Predictive modeling of social dynamics. At this level, the wearer genuinely operates at a different cognitive tier. Nietzsche's Übermensch isn't about domination — it's about self-overcoming. The glasses are the instrument of that overcoming: you become more than you were, not by escaping the body, but by augmenting it.</p>
+    </div>
+  </div>
+
+  <h3>The EQ + Maslow Integration</h3>
+  <p>Maslow's hierarchy isn't just a metaphor — it's the product roadmap. <strong>Physiological:</strong> the ring monitors sleep, the glasses monitor posture and screen distance. <strong>Safety:</strong> fall detection, environmental hazard alerts, real-time translation in foreign cities. <strong>Belonging:</strong> mesh communication, shared experiences, co-presence in remote relationships. <strong>Esteem:</strong> the Tony Stark feeling — competence amplification, knowledge at fingertips, never being caught unprepared. <strong>Self-actualization:</strong> the Übermensch layer — using the accumulated data and intelligence to make fundamentally different life choices, to see patterns invisible to the unaugmented, to become who you actually are.</p>
+
+  <p>EQ (emotional intelligence) is the through-line. Daniel Goleman's model — self-awareness, self-regulation, motivation, empathy, social skills — maps perfectly onto sensor capabilities. Eye tracking reveals attention (self-awareness). HRV biofeedback enables regulation. Contextual nudges sustain motivation. Microexpression analysis and voice tone detection enable empathy. Mesh communication enhances social skills. <strong>The glasses are an EQ prosthetic.</strong></p>
+
+  <p>This is why Vincent's thesis is genuinely differentiated. Everyone else is building a display. He's building a <strong>consciousness interface</strong> grounded in ancient philosophy, modern psychology, and personal therapeutic experience. The question isn't whether this vision is compelling — it is. The question is whether one person with $300/month can actually execute it.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 1: ACQUISITION MAP -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab1">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ ACQUISITION MAP: WHO'S BUYING WHAT AND WHY</h2>
+  <p>Every acquisition in the wearable AI space tells a story about what the acquirer believes is missing from their stack. By mapping these acquisitions chronologically, we can extrapolate the <strong>next 5 acquisitions</strong> that haven't happened yet — and identify which startups are most likely targets.</p>
+
+  <table>
+    <tr>
+      <th>Date</th>
+      <th>Acquirer</th>
+      <th>Target</th>
+      <th>Price</th>
+      <th>Strategic Rationale</th>
+      <th>Signal</th>
+    </tr>
+    <tr>
+      <td>Sep 2019</td>
+      <td><span class="badge badge-cyan">Meta</span></td>
+      <td>CTRL-Labs</td>
+      <td>$500M-$1B</td>
+      <td>EMG neural wristband — decode motor neuron signals for gesture input without cameras</td>
+      <td>Input modality beyond touch/voice is existential for AR</td>
+    </tr>
+    <tr>
+      <td>Jun 2020</td>
+      <td><span class="badge badge-purple">Google</span></td>
+      <td>North (Focals)</td>
+      <td>~$180M</td>
+      <td>Consumer smart glasses with prescription lens integration, fashion-forward design</td>
+      <td>Google learned Glass failed on form factor; North had the design DNA</td>
+    </tr>
+    <tr>
+      <td>May 2021</td>
+      <td><span class="badge badge-yellow">Snap</span></td>
+      <td>WaveOptics</td>
+      <td>$500M+</td>
+      <td>Waveguide display technology — the optical engine for AR glasses</td>
+      <td>Display supply chain is strategic; vertical integration of optics is mandatory</td>
+    </tr>
+    <tr>
+      <td>Apr 2021</td>
+      <td><span class="badge badge-green">Microsoft</span></td>
+      <td>Nuance Communications</td>
+      <td>$19.7B</td>
+      <td>Ambient clinical intelligence, voice AI, healthcare documentation</td>
+      <td>Voice + domain expertise (healthcare) is the enterprise AR wedge</td>
+    </tr>
+    <tr>
+      <td>Oct 2022</td>
+      <td><span class="badge badge-orange">Oura</span></td>
+      <td>Proxy (gesture tech)</td>
+      <td>Undisclosed</td>
+      <td>Gesture recognition from ring form factor — ring as input device, not just sensor</td>
+      <td>Ring + gesture = input device convergence with health wearable</td>
+    </tr>
+    <tr>
+      <td>Jan 2023</td>
+      <td><span class="badge badge-red">Apple</span></td>
+      <td>Doublepoint (gesture)</td>
+      <td>Undisclosed</td>
+      <td>IMU-based gesture recognition from wrist — WatchOS gesture input</td>
+      <td>Apple wants gesture without cameras; wrist IMU is their bet</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td><span class="badge badge-cyan">Meta</span></td>
+      <td>Limitless Pendant (partnership)</td>
+      <td>Partnership/investment</td>
+      <td>Always-on audio capture + AI transcription — ambient memory layer</td>
+      <td>Memory augmentation is the killer feature for always-on devices</td>
+    </tr>
+    <tr>
+      <td>2024</td>
+      <td><span class="badge badge-orange">Amazon</span></td>
+      <td>bee.computer</td>
+      <td>Undisclosed</td>
+      <td>AI-native wearable pin/companion device — ambient intelligence</td>
+      <td>Amazon doubling down on ambient compute after Echo; wearable is next</td>
+    </tr>
+  </table>
+
+  <h3>Pattern Analysis: What the Acquisitions Tell Us</h3>
+  <p><strong>Pattern 1: Input modality land-grab.</strong> Three of eight acquisitions (CTRL-Labs, Doublepoint by Apple, Proxy by Oura) are about gesture/neural input. The industry consensus is clear: touch screens won't exist on glasses, voice is socially awkward in public, and eye tracking alone is insufficient. The next input modality — whether EMG, IMU gesture, or BCI — is worth billions. Whoever controls the input layer controls the UX.</p>
+  <p><strong>Pattern 2: Vertical integration of optics.</strong> Snap spent $500M+ on WaveOptics because waveguide displays are the bottleneck. Apple reportedly spent years developing micro-OLED with TSMC and Sony. Meta partnered with EssilorLuxottica for Ray-Ban. The display supply chain is too critical to outsource. Expect every major player to either acquire or build captive display tech.</p>
+  <p><strong>Pattern 3: Memory/context as strategic asset.</strong> The Limitless Pendant deal and Amazon's bee.computer acquisition both point to the same thesis Vincent articulated: <em>context is the product.</em> The device that remembers everything — every conversation, every meeting, every insight — creates switching costs that make social media lock-in look trivial.</p>
+
+  <h3>Predicted Next 5 Acquisitions (2025-2027)</h3>
+  <table>
+    <tr><th>#</th><th>Predicted Acquirer</th><th>Predicted Target Category</th><th>Why</th><th>Likely Candidates</th></tr>
+    <tr>
+      <td>1</td>
+      <td><span class="badge badge-cyan">Meta</span></td>
+      <td>Bone conduction audio company</td>
+      <td>Ray-Ban Meta glasses' weakest point is open-ear audio quality. Shokz/AfterShokz has patents Meta needs.</td>
+      <td>Shokz, Bose AR patents, Noveto</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><span class="badge badge-red">Apple</span></td>
+      <td>Eye tracking + attention analytics</td>
+      <td>Vision Pro has eye tracking but Apple lacks the ML layer to monetize attention data. They'll acquire for internal use, not ads.</td>
+      <td>Tobii (public, ~$500M mkt cap), AdHawk, Pupil Labs</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><span class="badge badge-purple">Google</span></td>
+      <td>Real-time translation startup</td>
+      <td>Google Translate is good but not real-time-in-ear good. They need the UX layer, not the model. Vincent's "Smile" concept lives here.</td>
+      <td>Timekettle, Waverly Labs, Mymanu</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><span class="badge badge-green">Samsung</span></td>
+      <td>Smart ring company</td>
+      <td>Galaxy Ring launched but biometric accuracy lags Oura. They'll buy rather than build sensor fusion IP.</td>
+      <td>Movano, Ultrahuman, RingConn</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><span class="badge badge-yellow">ByteDance/TikTok</span></td>
+      <td>AR glasses hardware startup (Chinese)</td>
+      <td>ByteDance has the content, the AI (Doubao), and the distribution. Missing: the device. Xreal, Inmo, or Rokid partnership/acquisition.</td>
+      <td>Xreal, Rokid, Inmo, Thunderbird</td>
+    </tr>
+  </table>
+
+  <h3>The Meta-Signal</h3>
+  <p>Across all acquisitions, the meta-signal is: <strong>the "glasses" are not a product — they are a platform play</strong>, and every platform needs three things the acquirers are systematically buying: (1) input (gesture, neural, eye), (2) output (optics, audio, haptics), and (3) intelligence (memory, context, domain AI). The companies that vertically integrate all three fastest will own the next computing platform. Vincent's thesis of sovereign AI + ring + glasses maps exactly onto this: ring = input, glasses = output, local LLM = intelligence. He's building the indie version of what Meta is spending $10B+/year to acquire.</p>
+</div>
+
+<div class="glass-card">
+  <h2>◈ Acquisition Timeline Visualization</h2>
+  <div class="chart-wrap">
+    <canvas id="acquisitionChart"></canvas>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 2: CONTRARIAN TAKES -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab2">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ 10 CONTRARIAN TAKES ON THE AR GLASSES FUTURE</h2>
+  <p>Consensus is comfortable but rarely profitable. These positions go against the prevailing narrative in the AR/wearable industry. Each is supported by specific data and reasoned argument. You don't have to agree — but you should have a response to each.</p>
+</div>
+
+<div class="contrarian-card">
+  <h3>① "Displays will become LESS important, not more"</h3>
+  <p>The entire AR industry is obsessed with field-of-view, resolution, and waveguide brightness. Apple spent reportedly $3-5B developing Vision Pro's micro-OLED displays. Meta's Orion prototype pushes 70° FoV with holographic waveguides. But the data tells a different story: <strong>the best-selling "smart glasses" of 2024-2025 are Ray-Ban Meta — which have NO display at all.</strong> They sold over 1 million units (estimated) by Q4 2024, more than every display-equipped AR glasses combined across all time.</p>
+  <p>Humane's AI Pin (small display) failed spectacularly. Rabbit R1 (screen-forward) is a meme. Meanwhile, audio-first devices — AirPods, Ray-Ban Meta, Limitless Pendant — are thriving. The lesson: <strong>ambient intelligence doesn't need pixels.</strong> The most transformative use cases (real-time translation, always-on transcription, contextual whisper in your ear) work better with audio alone. Displays add cost ($200-500 BOM increase), weight (critical for all-day wear), battery drain (2-3x power consumption), and social stigma (visible glow = "Glasshole" redux).</p>
+  <p>Prediction: by 2028, the highest-revenue AR glasses will have either no display or a minimal notification LED/dot-matrix. The display-first products (Xreal, Rokid, Nreal) will consolidate into a niche entertainment/gaming category while audio-first ambient AI glasses dominate the mass market. Apple's long-rumored lightweight "Apple Glasses" will ship audio-only first, just as Apple Watch shipped without cellular first. <em>Source: Counterpoint Research, Ray-Ban Meta sales estimates Q4 2024; Humane AI Pin reported <10K units sold by discontinuation.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>② "The killer app is NOT visual — it's audio + haptic"</h3>
+  <p>Every AR demo shows floating holographic interfaces, Minority Report hand-waving, and virtual objects overlaid on the real world. This is visually stunning in demos and practically useless in daily life. The killer smartphone apps weren't visual showpieces — they were messaging (WhatsApp), ride-sharing (Uber), and social validation (Instagram). All fundamentally about <strong>connection and convenience</strong>, not visual spectacle.</p>
+  <p>For glasses, the killer app will be the <strong>"whisper agent"</strong> — an AI that speaks into your ear at exactly the right moment with exactly the right information. Meeting with a client? It whispers their kid's name, their last purchase, the concern they raised. Walking into a conference? It identifies people approaching by gait and voice, whispers their name and affiliation. In a negotiation? It detects stress in the counterparty's voice (vocal biomarker analysis per MIT Media Lab research, Picard et al.) and suggests you pause. Add haptic confirmation through a smart ring (two taps = "yes, I heard the suggestion") and you have a full input/output loop without any visual distraction.</p>
+  <p>The data supports this: Apple's AirPods generate ~$30B annual revenue — more than the entire AR/VR industry combined (estimated $12-18B in 2024 per IDC). Earbuds are the Trojan horse. When Apple, Meta, or Google make earbuds with bone conduction speakers, directional microphones, and AI processing, they'll call them "smart glasses" but the value will be 80% audio. <em>Source: Apple Q4 2024 earnings (Wearables segment); IDC Worldwide AR/VR Headset Tracker 2024.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>③ "Chinese companies will dominate the hardware, US will dominate the OS"</h3>
+  <p>Look at the smartphone precedent: in 2024, the top 5 smartphone manufacturers by volume are Samsung, Apple, Xiaomi, OPPO, and vivo — three of five are Chinese. Yet the operating systems that matter are iOS and Android, both American. The hardware commoditized; the platform captured the value. AR glasses are following the exact same trajectory. Xreal, Rokid, Inmo, Thunderbird Innovation, RayNeo, and TCL already ship AR glasses at price points ($200-500) that Western companies can't match. They have the Shenzhen supply chain: waveguide fabs, micro-OLED suppliers (BOE, Sunny Optical), assembly at scale.</p>
+  <p>Meanwhile, the OS layer is wide open. Snap OS (Snap's glasses platform) is closed. Meta's Reality OS is closed. Apple's visionOS is closed. The open-source alternatives — MentraOS, xg-glass-sdk, AugmentOS — are where the Android-equivalent will emerge. Android won because OEMs needed an OS they didn't have to build, and Google gave it away to capture the services layer. The same dynamic will play out: Chinese OEMs need a glasses OS, and whoever provides it captures the distribution, the data, and the developer ecosystem.</p>
+  <p>By 2028, expect 60-70% of AR glasses units shipped to come from Chinese manufacturers, running either a forked AOSP variant or a MentraOS/AugmentOS-type open platform, with US companies providing the AI services layer (Claude, GPT, Gemini) on top. Vincent's bet on MentraOS/xg-glass-sdk is strategically correct for this reason — he's building on what could become the "Android of glasses." <em>Source: Counterpoint Global Smartphone Market Share Q3 2024; Wellsenn XR China AR glasses shipment data 2024.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>④ "Eye tracking data is more valuable than the glasses themselves"</h3>
+  <p>The global digital advertising market was worth $626.9B in 2023 (Statista). The entire value chain — Google, Meta, The Trade Desk, all of it — runs on one thing: <strong>attention measurement.</strong> They spend billions trying to infer what you looked at, for how long, and whether you engaged. Eye tracking on AR glasses doesn't infer attention — it <em>measures it directly, at millisecond precision, in the real world.</em> You looked at a billboard for 2.3 seconds. You glanced at a competitor's product on the shelf. You made eye contact with someone for 0.8 seconds longer than normal. This data is worth orders of magnitude more than click-through rates.</p>
+  <p>Tobii, the leading eye tracking company, has a market cap of ~$500M despite limited consumer hardware penetration. Apple's Vision Pro includes eye tracking primarily for foveated rendering (GPU optimization), but the data potential is enormous. Meta explicitly stated that Orion's eye tracking will NOT be used for advertising — a promise that will last exactly as long as Wall Street's patience. The company that aggregates eye tracking data from millions of daily-wear glasses users will possess the most valuable attention dataset ever created.</p>
+  <p>The business model: glasses sold at cost (or subsidized), eye tracking data sold to brands, retailers, and urban planners at premium CPM rates. Think Nielsen ratings but for the real world, real-time, and individual-level. Vincent should seriously consider building an eye-tracking-data-as-a-service layer — even before building the full glasses experience. Privacy-preserving approaches (federated analytics, on-device aggregation, differential privacy) make this viable without being evil. A single-person company could build the analytics SDK and license it to every Chinese OEM shipping glasses with Tobii sensors. <em>Source: Tobii AB annual report 2024; Statista Global Digital Advertising Revenue 2023; Meta Orion privacy commitments, Connect 2024.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑤ "Privacy will be the premium feature, not AI"</h3>
+  <p>Everyone is competing on AI capabilities — better models, faster inference, more features. But consider: Apple's most successful differentiation of the last decade isn't AI — it's privacy. "What happens on your iPhone stays on your iPhone" drove billions in switching from Android. As always-on recording devices become ubiquitous, the privacy backlash will make the smartphone privacy debate look quaint. AR glasses that record everything you see and hear, process it through cloud AI, and store it on corporate servers? The EU will regulate this into oblivion. California will follow. China already has facial recognition regulations.</p>
+  <p>The premium product will be <strong>the glasses that provably don't spy on you.</strong> On-device processing, local LLMs, zero-cloud architecture, hardware kill switches, open-source firmware that can be audited. This is Vincent's sovereign AI thesis — but reframed as a luxury positioning, not just a philosophical stance. Think of it as the "organic food" of technology: people will pay 2-3x more for glasses they trust. Purism (the privacy phone company) proved there's a market, even if small. Framework (the repairable laptop) proved hardware transparency sells.</p>
+  <p>The timing is perfect: by 2026-2027, the first major "glasses privacy scandal" will hit (an always-on recording leaked, a stalking case enabled by AR tracking, employee surveillance via enterprise glasses). That scandal will create a $5-10B market opportunity for provably private glasses. Vincent should build the "privacy stack" — auditable firmware, on-device inference, encrypted local storage — and license it. It's easier to build than a full AI stack and potentially more defensible. <em>Source: Apple Privacy marketing impact analysis, Morgan Stanley 2023; EU AI Act provisions on biometric surveillance, 2024; Purism Librem 5 crowdfunding ($2.2M raised).</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑥ "MentraOS will beat Snap OS because open-source always wins the platform war"</h3>
+  <p>Historical precedent is unambiguous. Linux beat proprietary Unix. Android beat Windows Mobile, Symbian, and BlackBerry OS. Kubernetes beat every proprietary container orchestrator. VS Code beat every proprietary IDE. The pattern: in platform markets where hardware is commoditizing, the open-source option wins because it reduces friction for the long tail of device manufacturers who can't afford to build their own OS. MentraOS (and the broader open-source glasses OS ecosystem including AugmentOS, xg-glass-sdk) is positioned to be that option.</p>
+  <p>Snap OS is impressive technically — built for Spectacles, integrated with Snap's AR platform. But it's closed, Snap-exclusive, and tied to a company with a $17B market cap that's been unprofitable for most of its existence. If Snap fails (a real possibility given declining user growth in Western markets), Snap OS dies with it. MentraOS doesn't depend on any single company's survival. It depends on community contribution, which is harder to kill than a corporate project. The xg-glass-sdk project already supports multiple Chinese glasses platforms, giving it hardware diversity that Snap OS lacks.</p>
+  <p>The critical requirement: MentraOS needs a "Red Hat moment" — a company that provides enterprise support, certification, and guaranteed compatibility on top of the open-source base. Without commercial backing, open-source projects stall (see: Ubuntu Phone, Firefox OS). Vincent could be the person who builds that company — the "Red Hat of glasses OS." Revenue model: certification fees from OEMs ($1-5 per device), enterprise support contracts, and marketplace commission on apps/plugins. <em>Source: Android market share trajectory 2008-2015 (from 0% to 82%); Red Hat acquisition by IBM for $34B, 2019; Snap Inc. Q3 2024 earnings.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑦ "Smart rings will eat smartwatches before glasses eat phones"</h3>
+  <p>The smartwatch market is plateauing. Apple Watch shipments have been flat for three years (40-50M units/year per Counterpoint). The form factor is fundamentally limited: too small for a good display, too visible for continuous health monitoring (light leak during sleep), and socially coded as a "tech bro" accessory. Rings solve every problem watches have: invisible (social acceptance), always-on (sleep tracking is superior), lighter (3-8g vs 30-50g), and longer battery (5-7 days vs 1-2 days). Oura has shipped 2.5M+ rings. Samsung Galaxy Ring launched 2024. Apple ring patents are public (US Patent 20210064156A1).</p>
+  <p>The key insight: rings and glasses are <strong>complementary</strong>, while rings and watches are <strong>substitutes</strong>. You can wear a ring and glasses comfortably. You can't comfortably wear a ring and a watch and glasses. As the ring takes over biometric sensing (which is the primary use case for 70%+ of smartwatch buyers per Counterpoint survey data), the watch becomes redundant. Meanwhile, the ring becomes the input device for the glasses (gesture, haptic feedback, authentication).</p>
+  <p>Timeline: by 2027, smart ring shipments will exceed 50M units/year (from ~5M in 2024), primarily cannibalizing smartwatch growth. This happens BEFORE glasses eat phones because rings have no social stigma barrier, no display technology bottleneck, and a clear health value proposition that's already validated. Vincent's thesis of ring + glasses as a unified system is the winning architecture, but the ring comes first commercially. He should prioritize ring integration work. <em>Source: Counterpoint Smartwatch Tracker 2024; Oura Ring cumulative shipments (company announcement 2024); Apple patent filing US20210064156A1.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑧ "The real moat is the sensor fusion algorithm, not the hardware"</h3>
+  <p>Hardware commoditizes. Always. The iPhone's components were available to anyone — capacitive touchscreen, ARM processor, accelerometer. Apple's moat was the software integration. For AR glasses, the components are already commoditizing: IMU (Bosch, STMicro), camera modules (OmniVision), microphones (Knowles), waveguide displays (Lumus, DigiLens). What's NOT commodity is the algorithm that fuses 15+ sensor streams into a coherent real-time model of the user's state, context, and intent.</p>
+  <p>Sensor fusion for glasses is an order of magnitude harder than for phones. You're combining: 6-axis IMU (head pose), eye tracking (2 cameras, gaze vector + pupil dilation), RGB camera (scene understanding), depth sensor (spatial mapping), microphone array (beamforming + speaker diarization), ambient light sensor, proximity sensor, AND data from a paired ring (HRV, SpO2, skin temp, EMG gesture). Getting all of these to agree on "what is happening right now" at 60Hz with <20ms latency on a 1-2W power budget is a PhD-level signal processing challenge. The team that solves this best wins, regardless of whose hardware it runs on.</p>
+  <p>This is where Vincent's "cross-domain fusion" self-assessed strength could be genuinely valuable — not as a hardware builder but as a sensor fusion architect. The opportunity: build a best-in-class open-source sensor fusion library that every glasses OS can use, then monetize through consulting, custom implementations, and a managed cloud service for OEMs who can't build it in-house. Qualcomm's Snapdragon Spaces and Google's ARCore are the current leaders, but they're general-purpose. A glasses-specific sensor fusion SDK optimized for all-day wear (power-aware, context-aware) would be genuinely differentiated. <em>Source: Qualcomm Snapdragon AR2 Gen 1 specifications; Apple Vision Pro sensor array teardown (iFixit 2024); ARCore sensor fusion documentation.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑨ "BCI (brain-computer interface) will leapfrog all of this in 7 years"</h3>
+  <p>Everything discussed in this document — gesture input, eye tracking, voice commands, haptic feedback — is a workaround for the fact that we can't directly interface with the brain. Neuralink's N1 implant has demonstrated cursor control in a human subject (Noland Arbaugh, January 2024). Synchron's Stentrode (endovascular BCI) has demonstrated typing at 16 characters/minute without surgery. Kernel's non-invasive headset (Kernel Flow) measures brain hemodynamics at consumer price points. Meta's non-invasive BCI research (decoded speech from brain activity using MEG, published in Nature Machine Intelligence 2023) suggests direct neural text input within 5-7 years.</p>
+  <p>If non-invasive BCI achieves even 20 words/minute input speed with 95% accuracy — which is the trajectory suggested by current research (Willett et al., Stanford, Nature 2023: 62 words/minute with implanted arrays) — then every glasses input modality becomes obsolete overnight. You don't need eye tracking if you can detect intent directly. You don't need gesture recognition if you can decode motor imagery. You don't need voice commands if you can read subvocalization. The glasses become purely an output device — a display and audio channel — with BCI handling all input.</p>
+  <p>Vincent applied to Neuralink and sent them an overnight H100 brain-to-speech demo. This wasn't random — he sees the convergence. The strategic implication: don't over-invest in input modality software (gesture recognition, eye tracking UX) that BCI will obsolete. Instead, invest in the <strong>output and intelligence layers</strong> (display rendering, audio synthesis, context modeling, personalization) that are BCI-agnostic. The context graph, the personal AI model, the memory system — these are valuable regardless of whether input comes from a ring, eye tracking, or a neural implant. <em>Source: Neuralink N1 first human trial results, January 2024; Willett et al., "A high-performance speech neuroprosthesis," Nature 2023; Meta AI, "Brain decoding from non-invasive electromagnetic recordings," Nature Machine Intelligence 2023.</em></p>
+</div>
+
+<div class="contrarian-card">
+  <h3>⑩ "The first billion-dollar glasses app will be for therapy, not productivity"</h3>
+  <p>The AR industry assumes the killer app will be productivity — virtual monitors, real-time data overlays, remote collaboration. But the productivity market is crowded (Zoom, Slack, Microsoft, Google all competing) and enterprises are slow to adopt novel hardware (HoloLens enterprise adoption took 5+ years to reach meaningful revenue). Meanwhile, the mental health market is $383B globally (Grand View Research, 2024), growing at 15.4% CAGR, with massive unmet demand: 50% of Americans with mental illness receive no treatment (NAMI, 2024).</p>
+  <p>AR glasses are uniquely suited for therapy: they can deliver <strong>in-vivo exposure therapy</strong> (showing gradual anxiety triggers overlaid on the real world — proven more effective than VR exposure per Morina et al., 2015), <strong>real-time biofeedback</strong> (HRV visualization during panic attacks), <strong>social skills coaching</strong> (real-time prompts during conversations for autism spectrum individuals), and <strong>mindfulness guidance</strong> (ambient visual/audio cues throughout the day, not just during a 10-minute Headspace session). Vincent's personal experience with polyvagal therapy, CBT, and Wim Hof gives him genuine domain expertise here — he knows what therapeutic interventions feel like from the inside.</p>
+  <p>The business model: prescription digital therapeutics (PDTs) — FDA-cleared software prescribed by doctors, reimbursed by insurance at $200-1000/month. Akili Interactive's EndeavorRx (ADHD game) was the first FDA-cleared PDT in 2020. Pear Therapeutics raised $400M+ before bankruptcy (execution failure, not market failure). An AR glasses PDT for PTSD exposure therapy, social anxiety coaching, or addiction recovery could bill insurance directly, creating recurring revenue that doesn't depend on consumer willingness to pay. This is the path to Vincent's 250k@25 that doesn't require selling hardware or raising VC money. <em>Source: Grand View Research, Mental Health Market Size 2024; NAMI Mental Health Statistics 2024; Morina et al., "Can we use virtual reality in the treatment of social anxiety?" Behaviour Research and Therapy, 2015; FDA EndeavorRx clearance, June 2020.</em></p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 3: BLIND SPOTS -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab3">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ BLIND SPOTS: WHAT VINCENT DOESN'T KNOW (AND DOESN'T KNOW HE DOESN'T KNOW)</h2>
+  <p>The most dangerous gaps in any thesis aren't the known unknowns — they're the unknown unknowns. This section is intentionally uncomfortable. Its purpose is not to discourage but to <strong>calibrate</strong>: know where the ground is soft before you step on it.</p>
+</div>
+
+<div class="blind-card">
+  <h3>① Supply Chain <span class="severity sev-critical">CRITICAL</span></h3>
+  <p><strong>What Vincent knows:</strong> He can list every major AR glasses product, their specs, and their SDK capabilities. He's mapped 30 repositories and 60 opportunities.</p>
+  <p><strong>What he doesn't know:</strong> He has zero manufacturing contacts. No factory relationships in Shenzhen or anywhere else. No experience with BOM (bill of materials) optimization. He hasn't priced a single component: a Qualcomm XR2 Gen 2 chip costs $35-60 in volume; a waveguide display module from Lumus or DigiLens costs $80-200; a custom PCB run for 1000 units costs $15-40K minimum. He doesn't know the difference between a CM (contract manufacturer) and an ODM (original design manufacturer), or when to use which. He's never dealt with MOQs (minimum order quantities), tooling costs ($50-200K for custom injection molds), or the 6-12 month lead times for optical components.</p>
+  <p><strong>What he doesn't know he doesn't know:</strong> Component sourcing has geopolitical risk. US-China tensions mean certain chips (Qualcomm, Intel) face export controls. Shipping a device with a camera + radio from China to the US requires customs classification (HTS codes), FCC certification ($10-50K), and potentially CFIUS review if there's Chinese investment. A single component going end-of-life (EOL) can kill a product mid-production. This is why hardware startups have a >90% failure rate.</p>
+</div>
+
+<div class="blind-card">
+  <h3>② Regulatory <span class="severity sev-critical">CRITICAL</span></h3>
+  <p><strong>What Vincent knows:</strong> Health sensors are part of his thesis. HRV, SpO2, stress detection — these are central to the "EQ layer."</p>
+  <p><strong>What he doesn't know:</strong> Any device that claims to measure a health parameter (SpO2, heart rate, blood pressure) and presents it to users as health information likely requires FDA clearance as a Class II medical device (510(k) pathway). This costs $500K-$2M and takes 6-18 months for a well-prepared applicant. Oura spent years and millions getting their SpO2 and sleep staging cleared. Apple spent even more on the ECG feature for Apple Watch. Without FDA clearance, you can't market health claims in the US. And if you make health claims without clearance, the FDA will send you a warning letter — Oura received one in 2023 for marketing SpO2 before clearance.</p>
+  <p><strong>What he doesn't know he doesn't know:</strong> FCC certification (required for any device with Bluetooth/WiFi radio) costs $10-50K per SKU and requires a certified testing lab. CE marking for Europe is separate. If the glasses have a camera, GDPR in Europe and BIPA in Illinois create substantial liability. Recording audio in two-party consent states (California, where Vincent lives) without visible notification is a felony. There's an entire regulatory landscape around biometric data (CCPA, BIPA, GDPR) that doesn't just affect product design — it affects whether the product can legally exist.</p>
+</div>
+
+<div class="blind-card">
+  <h3>③ Distribution <span class="severity sev-high">HIGH</span></h3>
+  <p><strong>What Vincent knows:</strong> He thinks about product-market fit, user experience, and technology differentiation.</p>
+  <p><strong>What he doesn't know:</strong> Distribution is why hardware companies die. Warby Parker spent $100M+ building retail before going public. Bose has 160+ retail stores. Ray-Ban Meta succeeds partly because EssilorLuxottica has 17,500 optical retail locations worldwide. A solo developer with no retail relationships, no carrier partnerships (Verizon/AT&T won't return your call under $10M ARR), and no Amazon Launchpad experience is selling into a void. Even online-only DTC (direct to consumer) requires $50-200 CAC (customer acquisition cost) for a hardware product — at $300/mo disposable income, Vincent can acquire maybe one customer per month through paid channels.</p>
+  <p><strong>What he doesn't know he doesn't know:</strong> Hardware returns/warranty are a margin killer. Electronics have 15-25% return rates online. Each return costs $20-50 in shipping + processing + refurbishment. Warranty claims on a device worn 16 hours/day on someone's face? Expect 5-10% annual warranty claim rate. A single bad batch (moisture ingress, hinge failure, display delamination) can generate a recall that bankrupts a small company. There's a reason hardware startups that survive almost always raise $10M+ before shipping their first unit.</p>
+</div>
+
+<div class="blind-card">
+  <h3>④ Power Management <span class="severity sev-critical">CRITICAL</span></h3>
+  <p><strong>What Vincent knows:</strong> He's specified features that require enormous computational power: on-device LLM inference, real-time eye tracking ML, camera-based scene understanding, always-on audio processing, and mesh networking.</p>
+  <p><strong>What he doesn't know:</strong> The #1 unsolved problem in AR glasses is not features — it's thermal and power. A pair of glasses has ~40-50cm³ of volume in the temples for batteries. Current lithium-polymer energy density is ~700 Wh/L, giving you roughly 28-35 Wh total — about 1/4 of an iPhone 15 Pro battery. Running a Qualcomm XR2 Gen 2 at full load consumes 4-6W, giving you 5-8 hours at best. Running an on-device LLM (even a 3B parameter model quantized to INT4) requires 2-3W sustained, cutting battery life to 3-5 hours. Heat dissipation on a face-worn device is constrained to ~2W before the user feels discomfort (skin temperature sensitivity on the temples is ±2°C per ISO 13732-1).</p>
+  <p><strong>What he doesn't know he doesn't know:</strong> Every feature Vincent adds to the spec reduces battery life non-linearly (because thermal throttling kicks in, reducing clock speed, reducing performance, requiring longer processing time per task). The gap between "demo that works for 30 minutes" and "product that works for 16 hours" is not engineering polish — it's fundamental physics. This is why Meta's Orion prototype reportedly has 2-hour battery life, why Apple Vision Pro is tethered to an external battery, and why the most commercially successful glasses (Ray-Ban Meta) have deliberately limited compute to extend battery to 4-6 hours. Vincent should internalize: <strong>features are easy, watts are hard.</strong></p>
+</div>
+
+<div class="blind-card">
+  <h3>⑤ Audio Quality <span class="severity sev-high">HIGH</span></h3>
+  <p>Vincent's thesis relies heavily on audio as the primary output modality (the "whisper agent"). But he underestimates how hard good open-ear audio is. Bone conduction (Shokz) has tinny, bass-less sound and significant sound leakage above 50% volume. Open-ear speakers (Ray-Ban Meta, Bose Frames) leak audio to bystanders within 1 meter, making private AI whispers audible to others. Directional speakers (Noveto, Holosonics) require large transducer arrays that don't fit in glasses temples. Achieving "private, full-frequency, all-day comfortable audio in glasses form factor" is an unsolved acoustics problem that companies with 100+ audio engineers (Apple, Bose, Sony) are still working on.</p>
+</div>
+
+<div class="blind-card">
+  <h3>⑥ Social Acceptance <span class="severity sev-high">HIGH</span></h3>
+  <p>Google Glass (2013-2015) failed primarily because of social stigma, not technology. Wearers were called "Glassholes." Bars and restaurants banned the device. The camera was the primary concern — people didn't want to be recorded without consent. A decade later, the same dynamics apply: Ray-Ban Meta glasses have a tiny LED that indicates recording, but it's easily missed, and multiple incidents of surreptitious recording have been reported. The social contract around face-worn cameras is still unresolved. Vincent's thesis includes camera-based features (scene understanding, face recognition) that are technically impressive and socially radioactive. The form factor has to be <em>indistinguishable from normal glasses</em> — not "tech-forward," not "futuristic," but literally invisible as technology. Meta understood this by partnering with Ray-Ban (existing social legitimacy). An indie product doesn't have that social cover.</p>
+</div>
+
+<div class="blind-card">
+  <h3>⑦ Enterprise vs Consumer Reality <span class="severity sev-medium">MEDIUM</span></h3>
+  <p>Vincent's thesis is consumer-focused: personal AI, emotional regulation, daily wear. But the data says 85-90% of current AR revenue comes from enterprise (Qualcomm, 2024). Microsoft HoloLens ($3.5B+ in revenue) sells almost exclusively to manufacturing, healthcare, and military. Magic Leap pivoted entirely to enterprise after consumer failure. The reason: enterprises have budgets ($3-5K per headset is acceptable if it saves $50K/year in training costs), defined use cases (remote expert guidance, surgical planning, warehouse picking), and IT departments to manage deployment. Consumers have $300-500 budgets, vague expectations, and zero tolerance for friction. Vincent may be building the right vision for the wrong market timing. Enterprise-first, consumer-later might be the realistic path.</p>
+</div>
+
+<div class="blind-card">
+  <h3>⑧ The $300/month Reality <span class="severity sev-critical">CRITICAL</span></h3>
+  <p>Let's be brutally honest. At $300/month disposable income, Vincent cannot afford: an Xreal Air 2 Ultra ($699), a Meta Quest 3 ($499), a Brilliant Monocle ($349), or an Oura Ring Gen 3 ($299-549). He can afford: an Even Realities G1 (~$250 at launch price) or a used Brilliant Frame. He cannot afford a single month of AWS hosting for a production AI service ($200-500/month minimum for GPU inference). He cannot afford a single patent filing ($1,500-15,000). He cannot afford a single 3D-printed prototype run ($50-200). This is not a character flaw — it's a constraint that shapes strategy. The viable path is: (1) build software only, (2) use free tiers exclusively (GitHub, Hugging Face, Cloudflare Workers), (3) target revenue before product (consulting, freelancing, bounties in open-source projects), (4) find co-founders who bring capital or hardware access. The "solo hardware visionary" path is literally financially impossible at $300/month.</p>
+</div>
+
+<div class="blind-card">
+  <h3>⑨ Form Factor vs Features <span class="severity sev-high">HIGH</span></h3>
+  <p>Vincent is optimizing for features when the market is optimizing for form factor. The most cited reason people don't buy AR glasses (per Counterpoint consumer survey 2024): "too bulky/ugly" (47%), not "not enough features" (12%). Ray-Ban Meta succeeded by looking like normal Ray-Ban Wayfarers. Xreal Air 2 failed to reach mass market despite excellent display because they look like ski goggles. The lesson: <strong>you cannot engineer your way out of a fashion problem.</strong> Industrial design, material science, miniaturization, and brand design (which requires design talent Vincent hasn't mentioned having access to) are more important than any software feature. A beautiful, slim pair of audio-only glasses with mediocre AI will outsell a chunky, feature-rich pair with brilliant AI by 10:1.</p>
+</div>
+
+<div class="blind-card">
+  <h3>⑩ Patent Exposure <span class="severity sev-medium">MEDIUM</span></h3>
+  <p>Building on open-source foundations (MentraOS, xg-glass-sdk, AugmentOS) means inheriting their patent exposure. Open-source licenses protect copyright, not patents. If xg-glass-sdk implements a gesture recognition method that infringes a Qualcomm patent, everyone building on that SDK is exposed. Meta holds 3,000+ AR/VR patents. Apple holds 2,000+. Microsoft (via HoloLens) holds 1,500+. Magic Leap holds 1,000+ (and has sued multiple competitors). A solo developer can't afford patent litigation ($2-5M average cost), can't afford patent searches ($10-50K for a comprehensive freedom-to-operate analysis), and often can't even afford to know what they're infringing. The open-source community provides no patent indemnification (unlike enterprise software vendors who sometimes do). This is a ticking time bomb for anyone building commercial products on these stacks.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 4: MOAT ANALYSIS -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab4">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ MOAT ANALYSIS: WHAT'S DEFENSIBLE?</h2>
+  <p>Using Warren Buffett's competitive moat framework (popularized by Pat Dorsey of Morningstar), we evaluate five moat types against the AR glasses opportunity landscape. The hard truth: <strong>most opportunities have weak or no moats at current stage.</strong></p>
+
+  <h3>Framework Overview</h3>
+  <table>
+    <tr><th>Moat Type</th><th>Definition</th><th>Strength in AR Glasses</th><th>Assessment</th></tr>
+    <tr>
+      <td><span class="badge badge-green">Network Effects</span></td>
+      <td>Product gets more valuable as more people use it</td>
+      <td>Medium-High (in specific use cases)</td>
+      <td>Mesh communication, shared spatial annotations, co-discovery — these have genuine network effects. But only at scale, which doesn't exist yet. The cold-start problem is severe: 1 person with mesh glasses has zero value from mesh. Need 100+ in same physical area for utility. Closest analog: Waze needed ~5% traffic density before maps were useful.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-cyan">Switching Costs</span></td>
+      <td>Pain of leaving creates lock-in</td>
+      <td>High (if executed correctly)</td>
+      <td>This is Vincent's strongest moat pathway. 1 year of always-on transcription = 10,000+ hours of indexed personal data. Personal AI model trained on your behavior patterns, emotional states, preferences, relationships. Moving to a competitor means losing your "second brain." This is more lock-in than any social media platform — you're locked in by your own memory. The risk: user data portability regulations (EU Data Act 2025) may mandate export capabilities.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-purple">Intangible Assets</span></td>
+      <td>Patents, brand, regulatory licenses, proprietary data</td>
+      <td>Low-Medium</td>
+      <td>No patents (can't afford filing). No brand (unknown). No regulatory approvals. The only intangible asset is the training data collected from early users — which has exponential value if the product reaches 1000+ daily active users generating sensor data. Sensor fusion models trained on real-world glasses usage are genuinely scarce. But this requires shipping a product first.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">Cost Advantages</span></td>
+      <td>Ability to produce at lower cost than competitors</td>
+      <td>None</td>
+      <td>A solo developer has no cost advantages in hardware. BOM scales with volume — Meta buys Qualcomm chips at 1/3 the price Vincent would. Software cost advantage is possible through open-source leverage (free OS, free models, free cloud tiers), but this advantage is available to everyone equally. There is no proprietary cost advantage.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-yellow">Efficient Scale</span></td>
+      <td>Market too small for multiple players to profit</td>
+      <td>None (market is massive)</td>
+      <td>The AR glasses market is projected at $50-100B by 2030. This is not a niche where efficient scale creates a natural monopoly. However, specific sub-niches (e.g., "AR therapy glasses" or "privacy-first sovereign AI glasses") might be small enough that the first credible player enjoys efficient scale — if the sub-niche is $100M, it might only support 2-3 competitors.</td>
+    </tr>
+  </table>
+</div>
+
+<div class="glass-card">
+  <h3>Top 20 Opportunities Ranked by Moat Strength</h3>
+  <p>From the 60 identified opportunities, here are the top 20 with strongest defensibility potential:</p>
+  <table>
+    <tr><th>Rank</th><th>Opportunity</th><th>Primary Moat</th><th>Score</th><th>Rationale</th></tr>
+    <tr><td>1</td><td>Personal context graph / memory system</td><td>Switching costs</td><td><div class="moat-meter"><div class="moat-fill" style="width:92%;background:var(--green)"></div></div></td><td>Years of personal data = impossible to replicate</td></tr>
+    <tr><td>2</td><td>Sensor fusion SDK (multi-device)</td><td>Intangible (IP)</td><td><div class="moat-meter"><div class="moat-fill" style="width:85%;background:var(--green)"></div></div></td><td>Trained models on real sensor data are scarce</td></tr>
+    <tr><td>3</td><td>Mesh co-discovery network</td><td>Network effects</td><td><div class="moat-meter"><div class="moat-fill" style="width:82%;background:var(--green)"></div></div></td><td>Classic network effect — but cold start problem</td></tr>
+    <tr><td>4</td><td>AR therapy / digital therapeutic</td><td>Regulatory (FDA)</td><td><div class="moat-meter"><div class="moat-fill" style="width:80%;background:var(--cyan)"></div></div></td><td>FDA clearance = 18-month head start on competitors</td></tr>
+    <tr><td>5</td><td>Eye tracking analytics SDK</td><td>Intangible (data)</td><td><div class="moat-meter"><div class="moat-fill" style="width:78%;background:var(--cyan)"></div></div></td><td>First-mover in real-world eye tracking data aggregation</td></tr>
+    <tr><td>6</td><td>Privacy-certified glasses firmware</td><td>Intangible (trust/brand)</td><td><div class="moat-meter"><div class="moat-fill" style="width:75%;background:var(--cyan)"></div></div></td><td>Trust is hard to build, easy to lose — first mover advantage</td></tr>
+    <tr><td>7</td><td>Open-source glasses OS (MentraOS contrib)</td><td>Network effects</td><td><div class="moat-meter"><div class="moat-fill" style="width:72%;background:var(--cyan)"></div></div></td><td>Developer community = app ecosystem = user growth flywheel</td></tr>
+    <tr><td>8</td><td>Real-time translation (Smile concept)</td><td>Switching costs</td><td><div class="moat-meter"><div class="moat-fill" style="width:70%;background:var(--purple)"></div></div></td><td>Custom vocab, accent adaptation, learned preferences</td></tr>
+    <tr><td>9</td><td>Ring + glasses gesture protocol</td><td>Intangible (standard)</td><td><div class="moat-meter"><div class="moat-fill" style="width:68%;background:var(--purple)"></div></div></td><td>If adopted as de-facto standard, becomes the USB of wearables</td></tr>
+    <tr><td>10</td><td>Emotional regulation biofeedback</td><td>Switching costs</td><td><div class="moat-meter"><div class="moat-fill" style="width:65%;background:var(--purple)"></div></div></td><td>Personalized regulation model trained on your physiology</td></tr>
+    <tr><td>11</td><td>Developer tools for glasses apps</td><td>Switching costs</td><td><div class="moat-meter"><div class="moat-fill" style="width:62%;background:var(--purple)"></div></div></td><td>Developers invest in learning tooling; switching is costly</td></tr>
+    <tr><td>12</td><td>Spatial audio engine for glasses</td><td>Intangible (IP)</td><td><div class="moat-meter"><div class="moat-fill" style="width:58%;background:var(--yellow)"></div></div></td><td>HRTF personalization models are hard to replicate</td></tr>
+    <tr><td>13</td><td>Glasses app store / marketplace</td><td>Network effects</td><td><div class="moat-meter"><div class="moat-fill" style="width:55%;background:var(--yellow)"></div></div></td><td>Two-sided marketplace dynamics</td></tr>
+    <tr><td>14</td><td>Context-aware notification filtering</td><td>Switching costs</td><td><div class="moat-meter"><div class="moat-fill" style="width:52%;background:var(--yellow)"></div></div></td><td>Learned preferences over months of use</td></tr>
+    <tr><td>15</td><td>Social skills coaching (autism spectrum)</td><td>Regulatory + switching</td><td><div class="moat-meter"><div class="moat-fill" style="width:50%;background:var(--yellow)"></div></div></td><td>Niche with high willingness to pay, FDA moat potential</td></tr>
+    <tr><td>16-20</td><td>Navigation overlay, fitness coaching, meeting assistant, accessibility tools, language learning</td><td>Various</td><td><div class="moat-meter"><div class="moat-fill" style="width:35%;background:var(--orange)"></div></div></td><td>Weak moats — highly replicable by big tech</td></tr>
+  </table>
+
+  <h3>The Honest Assessment</h3>
+  <p><strong>Bottom line:</strong> Only opportunities #1-5 have moats strong enough to survive competition from Meta, Apple, and Google. The rest are features that big tech will either build in-house or acquire. Vincent's strategic focus should be exclusively on switching-cost and data-network-effect opportunities — the ones where being first and accumulating user data creates an advantage that money alone can't buy. Hardware features, UI innovations, and standalone apps are all indefensible for a solo developer.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 5: MARKET MAP -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab5">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ MARKET MAP: AR GLASSES BY THE NUMBERS</h2>
+  <p>Real numbers from real sources. The AR glasses market is simultaneously overhyped (by VCs and incumbents) and underhyped (by anyone looking at the smartphone adoption curve). Here's where we actually stand.</p>
+
+  <h3>TAM / SAM / SOM Analysis</h3>
+  <table>
+    <tr><th>Metric</th><th>Value</th><th>Source</th><th>Notes</th></tr>
+    <tr><td>Global AR Market (TAM) 2024</td><td>$32.1B</td><td>IDC Worldwide AR/VR Forecast 2024</td><td>Includes hardware, software, services. Up from $24.2B in 2023.</td></tr>
+    <tr><td>AR Glasses Hardware (SAM) 2024</td><td>$4.8B</td><td>Counterpoint XR Tracker Q4 2024</td><td>Consumer + enterprise glasses/headsets only. Excludes software.</td></tr>
+    <tr><td>Consumer AR Glasses (SOM) 2024</td><td>$1.2B</td><td>Counterpoint estimate</td><td>Consumer-only segment. Dominated by Ray-Ban Meta (~$600M est.)</td></tr>
+    <tr><td>Projected TAM 2030</td><td>$100-150B</td><td>IDC, Goldman Sachs, McKinsey (range)</td><td>Wide range reflects uncertainty. Bull case: $150B. Bear case: $60B.</td></tr>
+    <tr><td>AR Glasses Units Shipped 2024</td><td>~3.5M units</td><td>Wellsenn XR, Counterpoint</td><td>Compare: iPhone shipped 1.4M units in its first year (2007).</td></tr>
+    <tr><td>Projected Units 2028</td><td>25-40M units</td><td>IDC forecast</td><td>Compare: smartphone market was ~150M units in 2008 (2nd year).</td></tr>
+  </table>
+
+  <h3>The Smartphone Comparison (2007-era)</h3>
+  <p>If AR glasses are at the "2007 iPhone moment," here's what that means: the iPhone launched in June 2007 at $499-599. Smartphones existed before (BlackBerry, Palm, Windows Mobile) but were enterprise tools. The iPhone made them consumer products. AR glasses have their "BlackBerry era" products (HoloLens = BlackBerry, enterprise-focused, ugly) and their proto-iPhone (Ray-Ban Meta = the first one normal people actually buy). The true iPhone moment — when a single product defines the category — hasn't happened yet. It will likely come from Apple (lightweight Apple Glasses, expected 2026-2027) or Meta (Orion consumer version, expected 2027-2028).</p>
+  <p>The curve: smartphones went from 150M units (2008) to 1.5B units (2016) — a 10x growth in 8 years. If AR glasses follow a similar curve, we're looking at 25-40M units by 2028 and potentially 250-400M units by 2032. That's the bull case. The bear case is AR glasses follow the smartwatch curve: rapid initial growth, then plateauing at 200-300M units/year (useful but not universal). Either way, the opportunity is enormous.</p>
+</div>
+
+<div class="glass-card">
+  <h3>Geographic Breakdown</h3>
+  <div class="chart-wrap">
+    <canvas id="geoChart"></canvas>
+  </div>
+  <p><strong>China dominates units but not revenue.</strong> Wellsenn XR data shows China accounts for 60-65% of global AR glasses units shipped in 2024, driven by Xreal, Rokid, Inmo, RayNeo, and Thunderbird at $200-500 price points. But North America + Europe account for 60%+ of revenue due to higher ASPs (average selling prices). The Meta Ray-Ban at $299 in the US vs. Xreal Air 2 at ¥1,699 (~$235) in China illustrates the pricing dynamic. Implication for Vincent: if building software, target US/EU users (higher ARPU). If building hardware, manufacture in China (lower BOM).</p>
+</div>
+
+<div class="glass-card">
+  <h3>Price Segmentation (2024)</h3>
+  <div class="chart-wrap">
+    <canvas id="priceChart"></canvas>
+  </div>
+  <table>
+    <tr><th>Segment</th><th>Price Range</th><th>% of Units</th><th>% of Revenue</th><th>Key Products</th></tr>
+    <tr><td>Ultra-Premium</td><td>$2,000+</td><td>5%</td><td>35%</td><td>Apple Vision Pro ($3,499), Magic Leap 2 ($3,299), HoloLens 2 ($3,500)</td></tr>
+    <tr><td>Premium</td><td>$500-2,000</td><td>15%</td><td>30%</td><td>Xreal Air 2 Ultra ($699), Vuzix Blade 2 ($799)</td></tr>
+    <tr><td>Mid-Range</td><td>$200-500</td><td>45%</td><td>25%</td><td>Ray-Ban Meta ($299), Xreal Air 2 ($399), Even Realities G1 ($259)</td></tr>
+    <tr><td>Budget</td><td>Under $200</td><td>35%</td><td>10%</td><td>Brilliant Frame ($149 est.), Chinese OEM glasses, Inmo Air2</td></tr>
+  </table>
+
+  <h3>Consumer vs Enterprise Split</h3>
+  <p><strong>Enterprise: 85-90% of revenue, 30-40% of units.</strong> HoloLens ($3,500-5,200), Magic Leap 2 ($3,299), Vuzix M400 ($1,799), RealWear Navigator 500 ($999). Use cases: remote expert guidance (manufacturing), surgical planning (healthcare), warehouse picking (logistics), training simulation (military). <strong>Consumer: 10-15% of revenue, 60-70% of units.</strong> Ray-Ban Meta ($299), Xreal Air ($200-700), Rokid Max ($399). Use cases: media consumption, voice assistant, camera, navigation.</p>
+  <p>The gap is closing: consumer units are growing at 40-60% CAGR while enterprise is growing at 15-25% CAGR (Counterpoint). By 2028, consumer is projected to reach 40-50% of revenue. This is the inflection point Vincent should plan for — build enterprise-ready features now (remote expert, field service) to generate revenue, then pivot consumer features to ride the 2027-2028 consumer wave.</p>
+
+  <h3>Growth Rates by Segment</h3>
+  <div class="chart-wrap">
+    <canvas id="growthChart"></canvas>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 6: TECHNICAL DEBT -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab6">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ TECHNICAL DEBT INVENTORY</h2>
+  <p>Building on 30 open-source repositories is powerful leverage — and a ticking time bomb. Every dependency is a liability. Every unmaintained repo is a future emergency. This inventory documents the real cost of the open-source foundation.</p>
+
+  <h3>Critical Risk: Single-Maintainer Repositories</h3>
+  <p>Of the 30 repos mapped in the master presentation, an estimated 40-50% have a single primary contributor. In open-source, single-maintainer projects have a median lifespan of 2.5 years before abandonment (per research by Avelino et al., "A Novel Approach for Estimating Truck Factors," ICPC 2016 — studying "bus factor" in open-source). When the maintainer gets a new job, burns out, or loses interest, the repo stops receiving updates, security patches, and compatibility fixes. If your product depends on it, you inherit the maintenance burden.</p>
+
+  <table>
+    <tr><th>Category</th><th>Risk</th><th>Affected Repos (est.)</th><th>Mitigation</th></tr>
+    <tr>
+      <td>Single maintainer (bus factor = 1)</td>
+      <td><span class="badge badge-red">CRITICAL</span></td>
+      <td>12-15 of 30</td>
+      <td>Fork critical repos, contribute to increase bus factor, establish relationships with maintainers</td>
+    </tr>
+    <tr>
+      <td>Deprecated Android APIs (targetSdkVersion < 33)</td>
+      <td><span class="badge badge-red">CRITICAL</span></td>
+      <td>8-10 repos</td>
+      <td>Google Play requires targetSdkVersion 34+ by Aug 2025. Non-compliant apps get delisted. Must update.</td>
+    </tr>
+    <tr>
+      <td>Missing test coverage</td>
+      <td><span class="badge badge-orange">HIGH</span></td>
+      <td>20+ repos (most have 0% coverage)</td>
+      <td>Open-source glasses projects rarely have tests. Integration testing on real hardware is expensive/impossible without devices.</td>
+    </tr>
+    <tr>
+      <td>License conflicts (GPL vs Apache/MIT)</td>
+      <td><span class="badge badge-orange">HIGH</span></td>
+      <td>5-8 repos</td>
+      <td>GPL-licensed dependencies "infect" — if any dependency is GPLv3, your entire derivative work must be GPLv3. This prevents proprietary licensing or commercial dual-licensing. Run license audit (e.g., FOSSA, Snyk) before any commercial use.</td>
+    </tr>
+    <tr>
+      <td>Platform lock-in (Android-only)</td>
+      <td><span class="badge badge-yellow">MEDIUM</span></td>
+      <td>25+ repos</td>
+      <td>Almost all glasses SDKs are Android-only because most glasses run Android-based firmware. iOS support is secondary or absent. This locks out 55% of the US smartphone market (iOS share).</td>
+    </tr>
+    <tr>
+      <td>Python 2 / Node 14 / Java 8 dependencies</td>
+      <td><span class="badge badge-yellow">MEDIUM</span></td>
+      <td>5-7 repos</td>
+      <td>End-of-life runtimes with known security vulnerabilities. Must audit and upgrade.</td>
+    </tr>
+    <tr>
+      <td>Hardcoded API keys / secrets in repos</td>
+      <td><span class="badge badge-red">CRITICAL</span></td>
+      <td>3-5 repos (estimated)</td>
+      <td>Open-source repos frequently contain leaked API keys for Google Maps, OpenAI, Firebase. Using these repos means you might accidentally use someone else's keys (legal liability) or expose your own.</td>
+    </tr>
+    <tr>
+      <td>No CI/CD pipeline</td>
+      <td><span class="badge badge-yellow">MEDIUM</span></td>
+      <td>20+ repos</td>
+      <td>No automated builds means no guaranteed reproducibility. "It works on my machine" is the default state.</td>
+    </tr>
+    <tr>
+      <td>Bluetooth stack fragmentation</td>
+      <td><span class="badge badge-orange">HIGH</span></td>
+      <td>15+ repos</td>
+      <td>Each glasses manufacturer implements BLE communication differently. Even within the xg-glass-sdk, device-specific adapters are needed for each model. Adding a new glasses model = writing a new Bluetooth adapter from scratch.</td>
+    </tr>
+    <tr>
+      <td>Missing documentation</td>
+      <td><span class="badge badge-yellow">MEDIUM</span></td>
+      <td>18+ repos</td>
+      <td>Most repos have sparse READMEs, no API docs, no architecture diagrams. Understanding the code requires reading source directly — time-consuming and error-prone.</td>
+    </tr>
+  </table>
+
+  <h3>The Real Cost</h3>
+  <p>Maintaining 30 dependencies actively requires approximately <strong>10-20 hours/week</strong> of ongoing effort: monitoring for breaking changes, updating deprecated APIs, fixing security vulnerabilities, and adapting to new glasses firmware versions. This is effectively a full-time job — on top of actually building the product. For a solo developer, this is unsustainable. The realistic approach: identify the 5-8 most critical repos, fork them, and maintain only those. Accept that the other 20+ will drift and may need emergency patches when they break.</p>
+
+  <h3>License Compatibility Matrix</h3>
+  <table>
+    <tr><th>License</th><th>Commercial Use</th><th>Modify</th><th>Distribute</th><th>Patent Grant</th><th>Copyleft</th><th>Risk Level</th></tr>
+    <tr><td>MIT</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td><span class="badge badge-green">LOW</span></td></tr>
+    <tr><td>Apache 2.0</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td><span class="badge badge-green">LOW</span></td></tr>
+    <tr><td>BSD 3-Clause</td><td>✅</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td><td><span class="badge badge-green">LOW</span></td></tr>
+    <tr><td>GPLv3</td><td>✅*</td><td>✅</td><td>✅</td><td>✅</td><td>✅ <strong>STRONG</strong></td><td><span class="badge badge-red">HIGH</span> — must open-source derivative works</td></tr>
+    <tr><td>LGPLv3</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅ WEAK</td><td><span class="badge badge-yellow">MEDIUM</span> — dynamic linking OK, static linking = copyleft</td></tr>
+    <tr><td>AGPL</td><td>✅*</td><td>✅</td><td>✅</td><td>✅</td><td>✅ <strong>NETWORK</strong></td><td><span class="badge badge-red">CRITICAL</span> — even SaaS use requires open-sourcing</td></tr>
+    <tr><td>Unlicensed / No License</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>N/A</td><td><span class="badge badge-red">CRITICAL</span> — no license = all rights reserved by default</td></tr>
+  </table>
+  <p><strong>Action item:</strong> Run <code>license-checker</code> or <code>fossa-cli</code> across all 30 repos before any commercial deployment. A single AGPL dependency in the stack means the entire product must be open-sourced if deployed as a service. Several AI model libraries use AGPL (e.g., some ONNX runtime forks, certain Hugging Face model implementations).</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 7: VINCENT'S EDGE -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab7">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ VINCENT'S EDGE: STRENGTHS, WEAKNESSES, AND THE META-STRATEGY</h2>
+  <p>A dispassionate assessment of what Vincent brings that others don't — and what others bring that he lacks. The goal isn't flattery or self-flagellation. It's strategic positioning: play to strengths, mitigate weaknesses, and know when to fold.</p>
+
+  <h3>THE EDGE (Genuine Differentiators)</h3>
+
+  <h4>1. Cross-Domain Fusion</h4>
+  <p>Vincent operates across domains that almost never overlap in a single person: NLP/AI engineering (Inflection AI, L'Oréal NL-to-SQL), comparative philosophy (Samkhya, Kashmir Shaivism, Nietzsche, Stoics), clinical psychology concepts (polyvagal theory, attachment theory, CBT), hardware awareness (AR glasses ecosystem mapping), linguistics (trilingual EN/FR + Mandarin exposure), and creative/aesthetic sensibility ("soft grunge French It Girl" — meaning he thinks about form factor as identity, not just function). The AR glasses space is dominated by hardware engineers who don't understand psychology, psychologists who don't understand engineering, and product managers who understand neither deeply. Vincent's fusion is genuinely rare and maps directly onto the thesis: building an <em>emotionally intelligent wearable</em> requires emotional intelligence in the builder.</p>
+
+  <h4>2. Research-to-Product Translation</h4>
+  <p>The overnight H100 brain-to-speech demo sent to Neuralink. The L'Oréal Jolie NL-to-SQL system. The ACL-IWSLT conference attendance notes on simultaneous translation. Vincent reads papers (Karpathy, Linus Lee, Andy Matuschak) and builds things. This is the "full-stack researcher" archetype that companies like DeepMind and Anthropic prize. Most researchers can't ship; most shippers can't research. Vincent does both, which means he can identify opportunities in academic papers before they're obvious to the market (1-3 year lead time on "research → startup" cycles per Y Combinator data).</p>
+
+  <h4>3. Trilingual / Tricultural</h4>
+  <p>English (native), French (native-level from ESSEC/upbringing), and Mandarin (exposure, learning). The AR glasses market is split US/Europe/China. The ability to read Chinese research papers (even with AI assistance), understand the Shenzhen ecosystem culture, and navigate both Western and Chinese developer communities is a genuine competitive advantage. Most US builders completely ignore the Chinese glasses ecosystem (Xreal, Rokid, Inmo, Thunderbird) — Vincent doesn't. Most Chinese builders can't write compelling English-language developer docs or marketing — Vincent can bridge both worlds.</p>
+
+  <h4>4. Meditation / Trance / Endurance Capacity</h4>
+  <p>Vincent's Wim Hof practice, meditation trance naps, and marathon training (4:30 target, NYC Marathon) indicate high frustration tolerance and ability to sustain focus through discomfort. Building a hardware/software product as a solo developer is a 2-5 year endurance event, not a sprint. The dropout rate for solo hardware projects is >95% within 18 months (anecdotal but consistent across hardware incubator data from HAX, Highway1). Vincent's meditation practice and physical endurance training suggest he may have the psychological durability to outlast the curve.</p>
+
+  <h4>5. The Therapeutic Experience</h4>
+  <p>Vincent has done real therapeutic work: polyvagal therapy, CBT, avoidant attachment work, shame/freeze processing. This isn't just personal growth — it's <strong>domain expertise</strong> for the AR therapy opportunity (Contrarian Take #10). He understands from the inside what a therapeutic intervention feels like, when it works, and why it fails. Most hardware builders have never been in therapy. Vincent's therapeutic journey IS his competitive advantage for building emotionally intelligent technology.</p>
+</div>
+
+<div class="glass-card">
+  <h3>THE WEAKNESSES (Self-Identified + Externally Observed)</h3>
+
+  <h4>1. "Stubborn" (Self-Identified)</h4>
+  <p>Stubbornness in a founder is a double-edged sword. It powers persistence (good) but prevents pivoting (bad). The specific risk: Vincent has a very specific, very detailed vision of what AR glasses should be. If the market wants something different (e.g., enterprise-first, audio-only, no AI), stubbornness could mean building the wrong product for years. <strong>Mitigation:</strong> Set explicit "kill criteria" for each project: if X doesn't happen by Y date, pivot. Write them down. Share them with someone who will hold you accountable.</p>
+
+  <h4>2. "Exaggerates" (Self-Identified)</h4>
+  <p>The demo day reflection about "fraudulence" and "selling vaporware" is revealing. In the startup world, exaggeration is sometimes called "vision selling" — but Vincent himself feels uncomfortable with it. This suggests a values conflict: his integrity wants to undersell, his ambition wants to oversell. <strong>Mitigation:</strong> Adopt the "honest demo" principle — only demo what actually works, never mockups. This is slower but builds genuine trust. Investors and partners who value substance over hype are better long-term allies anyway.</p>
+
+  <h4>3. "Assumes Without Verification" (Self-Identified)</h4>
+  <p>This is the most dangerous weakness for someone building on 30 repos. Assuming an API works as documented (it often doesn't). Assuming a library is maintained (it often isn't). Assuming a glasses device supports a feature (specs lie). <strong>Mitigation:</strong> Adopt a "verify first" protocol. Before building any feature on a dependency, write the integration test FIRST. If you can't test it (because you don't have the hardware), document the assumption explicitly and tag it as UNVERIFIED. Review all UNVERIFIED assumptions weekly.</p>
+
+  <h4>4. "Sleep Volatile" (Self-Identified)</h4>
+  <p>Inconsistent sleep is the #1 predictor of reduced cognitive performance, poor decision-making, and emotional dysregulation (Walker, "Why We Sleep," 2017). For someone building complex technical systems that require deep focus, volatile sleep is not a personality quirk — it's a production bottleneck. <strong>Mitigation:</strong> The ring + glasses thesis includes sleep tracking — use it. Oura Ring data shows sleep debt accumulates non-linearly: 2 nights of 5-hour sleep reduces cognitive performance by ~25% (Oura blog, citing Van Dongen et al., Sleep, 2003). Set a hard rule: no coding decisions after midnight, no architectural decisions on <6 hours sleep. Use the Wim Hof breathing as a sleep reset tool, not a sleep substitute.</p>
+
+  <h4>5. $300/Month Financial Constraint</h4>
+  <p>This isn't a weakness of character — it's a structural constraint that shapes every strategic decision. See Blind Spots #8 for full analysis. The meta-strategy implication: <strong>Vincent must choose opportunities that are capital-light and time-rich</strong>. Software, not hardware. Consulting, not products. Open-source contributions (reputation-building), not proprietary development (capital-intensive). The path to 250k@25 is most realistically: (1) become the go-to expert on glasses OS integration through blogging + open-source, (2) get hired by a glasses company at $150-250k salary (Inflection AI background helps), (3) build side projects on company time/resources, (4) spin out when ready.</p>
+
+  <h3>The Meta-Strategy: Lever the Edge, Hedge the Weakness</h3>
+  <p>The optimal strategy is: <strong>become the "connector" of the AR glasses ecosystem</strong> — not a hardware builder, not an app developer, but the person who understands how all the pieces fit together and can explain it to everyone else. Write the definitive guide to glasses SDKs (this presentation is a start). Contribute to MentraOS/AugmentOS. Build integration bridges between Chinese hardware and Western AI services. Consult for companies entering the space. This leverages every strength (cross-domain, research-to-product, trilingual, endurance) while requiring zero capital and hedging every weakness (no hardware risk, no exaggeration needed, assumptions are testable in software, and the work is flexible enough to accommodate volatile sleep).</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 8: MORPHIC RESONANCE -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab8">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ THE MORPHIC RESONANCE PLAY</h2>
+  <p>This section draws from Vincent's "magic" note — a deeply personal document connecting DJ culture, Rupert Sheldrake's Morphic Resonance, alchemy, and AI. It's the most philosophically ambitious part of his thesis and the one most likely to be dismissed by conventional thinkers. Which is exactly why it might be the most valuable.</p>
+
+  <div class="quote-block">
+    "Vibes are antimemes wrapped in a meme."
+    <div class="attr">— Vincent Roy, Computational Memetics notes</div>
+  </div>
+
+  <h3>The Core Concept: Morphic Resonance as Information Architecture</h3>
+  <p>Rupert Sheldrake's Morphic Resonance theory (first published in "A New Science of Life," 1981) proposes that natural systems — from crystals to organisms to behavioral patterns — inherit a collective memory from previous similar systems. When a new crystal forms, it's influenced by the "morphic field" of all crystals of that type that have ever formed. When a rat learns a maze in London, rats in New York learn the same maze slightly faster. The theory is scientifically controversial (Nature infamously called the book "the best candidate for burning") but conceptually powerful as a <em>design principle</em> for information systems.</p>
+
+  <p>Vincent's insight: <strong>AI systems already exhibit something functionally equivalent to morphic resonance.</strong> When GPT-4 learns to solve a class of problem, every GPT-4 instance benefits. When one user discovers a prompting technique, it propagates through the community (memetically) and eventually gets incorporated into the training data (cybernetically). The "morphic field" of AI is real — it's called the internet, and it's called training data, and it's called the open-source ecosystem. Each contribution makes the next contribution easier. Each breakthrough reduces the activation energy for the next breakthrough.</p>
+
+  <h3>The Glasses as "Morphic Field Amplifier"</h3>
+  <p>Here's where it gets interesting for AR glasses. Vincent's concept: always-on glasses capture <strong>breakthrough moments</strong> — the instant a person has an insight, makes a connection, enters a flow state. The ring detects the physiological signature (HRV spike, skin conductance change, pupil dilation). The glasses capture the context (what they were looking at, who they were talking to, what was said). The AI tags and indexes the moment. Over time, the system builds a <strong>map of breakthrough conditions</strong> — not just for one person, but (with federated learning) across all users.</p>
+
+  <p>Imagine: the glasses notice that Vincent consistently has his best ideas between 6-7 AM, while walking, after a Wim Hof session, when HRV is above 65ms. They notice that creative breakthroughs correlate with exposure to specific types of stimuli (abstract art, specific music frequencies, conversations with certain people). They notice that the 300 other users in the "creative professionals" cohort show similar patterns but with individual variations. The system doesn't just record breakthroughs — it <strong>engineers the conditions for breakthroughs</strong> by gently steering the user's environment, schedule, and inputs toward their personal breakthrough profile.</p>
+
+  <h3>AI as Alchemy: Turning Lead into Gold</h3>
+  <p>Vincent's "magic" note describes AI as modern alchemy — turning the "lead" of raw data and mundane interaction into the "gold" of insight, creation, and transformation. The alchemical metaphor is deeper than it appears. In Jungian psychology (which influenced Sheldrake), alchemy is a metaphor for psychological individuation — the process of becoming who you truly are by integrating unconscious material into consciousness. The glasses, in this framework, are the <strong>alchemical vessel</strong> — the sealed container (privacy-preserving, local processing) within which the transformation occurs (raw perception → processed insight → integrated wisdom).</p>
+
+  <p>The DJ as sorcerer metaphor from Vincent's notes extends this: a DJ doesn't create sound — they <em>curate, sequence, and transform</em> existing sounds to create an experience that transcends the individual components. The AR glasses AI is the DJ of your perceptual experience — curating what information reaches you, when, in what form, at what intensity. Not creating reality, but <em>remixing</em> it. The computational memetics concept ("vibes are antimemes wrapped in a meme") captures this perfectly: the most powerful information isn't explicit content (memes) — it's the <em>feeling-tone</em> that accompanies content (vibes/antimemes). An antimeme is information that resists being shared or remembered (coined by qntm). A vibe is an antimeme that's been made transmissible by wrapping it in a memetic carrier.</p>
+
+  <h3>Practical Applications</h3>
+  <p><strong>1. Breakthrough Detection Engine:</strong> ML model trained on physiological + contextual data to identify moments of insight, flow, and creative breakthrough in real-time. Output: timestamped, context-rich "breakthrough logs" that the user can review and pattern-match. Technical feasibility: HIGH — HRV analysis + eye tracking fixation patterns + voice prosody analysis are all well-studied signals.</p>
+  <p><strong>2. Morphic Field Dashboard:</strong> Aggregated (anonymized, federated) view of breakthrough patterns across the user community. "People like you tend to break through when..." Not recommendation engine (too prescriptive) but <em>resonance indicator</em> (shows conditions, doesn't dictate actions). This is Vincent's network effect moat: the more users, the better the breakthrough model, the more valuable the product.</p>
+  <p><strong>3. Vibe Transmission Protocol:</strong> A communication layer that transmits not just words/images but the <em>emotional context</em> in which they were created. When you share a note through the glasses mesh, it includes the biometric signature of your state when you wrote it — were you calm, excited, anxious, in flow? The recipient's AI uses this metadata to present the information in a way that's consonant with the original emotional intent. This is the "computational memetics" made real: structured emotional metadata as a communication layer.</p>
+
+  <p>Is this scientifically rigorous? The morphic resonance framing is speculative. The underlying technology (biometric state detection, contextual indexing, federated pattern learning) is not. The philosophy provides the <strong>design intuition</strong> that the engineering validates or refutes. Vincent's willingness to draw from unconventional sources (Sheldrake, alchemy, DJ culture) is either his greatest intellectual asset or his greatest source of untestable assumptions. The answer depends entirely on whether the engineering delivers measurable results.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 9: SECOND-ORDER EFFECTS -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab9">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ SECOND-ORDER EFFECTS CHAIN</h2>
+  <p>First-order thinking asks: "What does this feature do?" Second-order thinking asks: "If millions of people use this feature daily for 5 years, how does society change?" For the top 10 opportunities, we trace the consequences 4 levels deep.</p>
+</div>
+
+<div class="glass-card">
+  <h3>1. Always-On Transcription</h3>
+  <div class="chain">
+    <div class="chain-node">Always-on transcription</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Perfect memory of conversations</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Reduced cognitive load (no need to mentally rehearse/remember)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">People choose careers requiring less memorization, more creativity</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Education systems restructure away from knowledge retention toward synthesis</div>
+  </div>
+  <p><strong>Dark second-order:</strong> If everything is recorded, spontaneous honesty dies. People self-censor knowing every word is indexed. Relationships become more formal, more guarded. The "off the record" conversation becomes impossible. Counter: audio-only devices (no video) with visible indicators and consent protocols may preserve some spontaneity. The Limitless Pendant model (visible, consent-based) is more socially sustainable than invisible recording.</p>
+</div>
+
+<div class="glass-card">
+  <h3>2. Real-Time Translation</h3>
+  <div class="chain">
+    <div class="chain-node">Real-time speech translation</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Language barriers collapse</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Labor markets globalize for in-person work (not just remote)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Immigration politics shift (language was the #1 integration barrier)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Minority languages accelerate toward extinction (no economic incentive to learn)</div>
+  </div>
+  <p><strong>Vincent's specific relevance:</strong> His ACL-IWSLT conference notes and "Smile" concept sit exactly here. The translation startup play is not just about technology — it's about <em>who controls the cultural bridge</em>. If Google Translate mediates every cross-language interaction, Google's translation biases (American English-centric, formality assumptions) become the default cultural interface. An open-source, community-trained translation model could preserve linguistic diversity. This is a 10-year project with civilizational implications.</p>
+</div>
+
+<div class="glass-card">
+  <h3>3. Eye Tracking + Attention Analytics</h3>
+  <div class="chain">
+    <div class="chain-node">Always-on eye tracking</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Attention is precisely measured in the real world</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Advertising shifts from "impressions" to "verified attention seconds"</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Physical world gets optimized for attention capture (like the internet did)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Public spaces become as addictively designed as social media feeds</div>
+  </div>
+  <p><strong>The dystopian case:</strong> Eye tracking data in the wrong hands is a surveillance capitalism dream. Knowing exactly what every person looks at, for how long, and how their pupils dilate (indicating emotional arousal) is the most intimate behavioral dataset ever conceived. China's social credit system + ubiquitous eye tracking = attention compliance scoring. This is why Vincent's "privacy as premium feature" contrarian take is not just a business opportunity — it's an ethical imperative.</p>
+</div>
+
+<div class="glass-card">
+  <h3>4. Emotional Regulation Biofeedback</h3>
+  <div class="chain">
+    <div class="chain-node">Real-time stress detection + calming intervention</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Fewer anxiety attacks, lower baseline cortisol</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">People take more interpersonal risks (lower fear of rejection/conflict)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Relationship formation patterns change (more direct, less avoidant)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Attachment style distribution in the population shifts toward secure</div>
+  </div>
+  <p><strong>Personal resonance:</strong> Vincent's avoidant attachment work and shame/freeze processing directly connect here. If the glasses had existed during his brother Max situation — detecting the freeze response in real-time, gently breaking the avoidant cycle with a biofeedback prompt — could the relationship have been saved? This isn't hypothetical product design. It's autobiography as engineering specification.</p>
+</div>
+
+<div class="glass-card">
+  <h3>5. Mesh Co-Discovery Network</h3>
+  <div class="chain">
+    <div class="chain-node">Glasses wearers share spatial context</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Real-time crowdsourced understanding of physical spaces</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Cities become "readable" — every building, every face, every object annotated</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">The concept of "getting lost" disappears — cognitive cartography changes</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Serendipitous discovery declines — every walk is optimized, not exploratory</div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h3>6. Social Skills Coaching (Autism Spectrum)</h3>
+  <div class="chain">
+    <div class="chain-node">Real-time social cue interpretation</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Autistic individuals navigate social situations independently</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Employment rates for autism spectrum increase significantly</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Neurodiversity in workplaces increases, changing team dynamics and innovation</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Definition of "disability" shifts — it's a technology gap, not a human deficiency</div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h3>7. Context-Aware Meeting Assistant</h3>
+  <div class="chain">
+    <div class="chain-node">AI whispers participant names, history, relationship context</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Meetings become hyper-efficient (no "catch me up" dead time)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Meeting culture shifts to async-first (synchronous meetings become redundant)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Office real estate demand drops further</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Urban planning shifts — commercial zones repurpose to residential/mixed-use</div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h3>8. Sovereign Personal AI (Local LLM)</h3>
+  <div class="chain">
+    <div class="chain-node">On-device AI that knows you deeply, owned by you</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Users develop emotional attachment to their AI (not a company's AI)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Personal AI becomes legal entity (digital estate, inheritance rights)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Identity becomes continuous beyond death (your AI continues "being you")</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Grief, death, and identity undergo philosophical crisis</div>
+  </div>
+  <p>Reid Hoffman's concept of a "lifetime co-navigator AI born at birth" connects directly: if the glasses start recording and learning from year 1, by age 30 the personal AI has 30 years of contextual data. This is not a product — it's a <strong>digital twin with consciousness-adjacent properties.</strong> "Eldish rings, not Sauron" — the power must be distributed, not centralized.</p>
+</div>
+
+<div class="glass-card">
+  <h3>9. Fitness / Movement Coaching</h3>
+  <div class="chain">
+    <div class="chain-node">Real-time form correction via AR overlay</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Injury rates drop (bad form = #1 cause of gym injuries)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Personal trainer profession disrupted (AI does 80% of the job)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Fitness becomes more democratized (no $80/session trainer needed)</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Population health improves → healthcare costs decrease → insurance restructures</div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h3>10. Computational Memetics Engine</h3>
+  <div class="chain">
+    <div class="chain-node">Ideas tagged with emotional + contextual metadata</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Idea propagation becomes trackable and optimizable</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Persuasion becomes a science with glasses-mediated A/B testing on reality</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Political campaigns, advertising, and propaganda reach terrifying effectiveness</div>
+    <span class="chain-arrow">→</span>
+    <div class="chain-node">Counter: open-source memetic defense tools (detecting manipulation in real-time)</div>
+  </div>
+  <p>This is the most dangerous and most powerful opportunity on the list. Whoever builds the computational memetics engine controls the propagation dynamics of ideas through the physical world. Vincent's insight about "vibes as antimemes wrapped in memes" is the theoretical foundation — but the engineering application has world-historical implications, both utopian (culture that evolves faster) and dystopian (manipulation at scale). Proceed with extreme ethical clarity.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 10: THE MONEY PATH -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab10">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ THE MONEY PATH: FROM $300/MONTH TO 250K@25</h2>
+  <p>The goal: $250,000 annual income by age 25 (currently 26, so this is retrospective/immediate). Then $1M@30, $10M@40. Let's be brutally honest about which of the 60 opportunities could generate real money, and how fast.</p>
+
+  <h3>Tier 1: Revenue in 0-3 Months (Consulting / Services)</h3>
+  <p>These generate income immediately with zero capital investment. They leverage existing knowledge, not new products.</p>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#1</div>
+  <div>
+    <strong>AR Glasses Integration Consulting</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">Companies entering the AR space need someone who understands the SDK landscape across 30+ repos. Vincent is literally building that expertise right now. Rate: $150-300/hr. Target: startups building glasses apps, enterprise companies evaluating glasses for field workers. Source clients: Upwork, Toptal, direct outreach to companies using xg-glass-sdk.</p>
+  </div>
+  <div class="money-rev">$50-150K/yr</div>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#2</div>
+  <div>
+    <strong>Technical Writing: "The Definitive Guide to AR Glasses Development"</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">No comprehensive guide exists for the fragmented glasses SDK ecosystem. Write it (30-50K words), sell on Gumroad ($49-99) or through O'Reilly. Alternatively: paid newsletter/Substack on AR glasses engineering ($10/month, need 500 subscribers = $60K/yr). This is the "build audience → monetize expertise" playbook that Karpathy, Maggie Appleton, and Andy Matuschak (Vincent's own reading list) all follow.</p>
+  </div>
+  <div class="money-rev">$20-80K/yr</div>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#3</div>
+  <div>
+    <strong>Open Source Bounties + Sponsored Development</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">Contribute to MentraOS, AugmentOS, xg-glass-sdk. Build reputation. Then: companies like Xreal, Even Realities, and Brilliant post bounties for SDK features ($500-5000 per feature). GitHub Sponsors can generate $500-2000/month for active open-source maintainers. Gitcoin bounties for web3-adjacent wearable projects.</p>
+  </div>
+  <div class="money-rev">$15-40K/yr</div>
+</div>
+
+<div class="glass-card">
+  <h3>Tier 2: Revenue in 3-12 Months (Products / SaaS)</h3>
+  <p>These require building something, but are achievable solo with free infrastructure.</p>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#4</div>
+  <div>
+    <strong>Eye Tracking Analytics SDK (B2B SaaS)</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">Build a lightweight SDK that glasses app developers embed to capture eye tracking data (with user consent). Aggregate and anonymize. Sell insights to brands, retailers, UX researchers. Pricing: $500-5000/month per enterprise client. TAM: the eye tracking analytics market is projected at $1.8B by 2028 (MarketsandMarkets). SAM: glasses-specific eye tracking analytics is ~$50M today but growing 40%+ CAGR. Capital required: $0 (open-source tools, free cloud tiers for MVP). Time to first customer: 6-9 months.</p>
+  </div>
+  <div class="money-rev">$100-500K/yr</div>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#5</div>
+  <div>
+    <strong>Glasses App Testing-as-a-Service</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">The #1 pain point for glasses developers: testing across devices. There are 20+ glasses models, each with different firmware, different BLE protocols, different display specs. Build an automated testing service (cloud-connected glasses farm) or manual QA service. Pricing: $500-2000/month per developer team. Low capital if starting as manual QA; high capital if building automated infrastructure.</p>
+  </div>
+  <div class="money-rev">$30-100K/yr</div>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#6</div>
+  <div>
+    <strong>AR Therapy MVP (PTSD Exposure Therapy)</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">Build an MVP exposure therapy app for existing glasses (Xreal, Meta Quest passthrough). No FDA clearance needed for MVP (it's a "wellness app" until you make medical claims). Partner with a licensed therapist for clinical credibility. Charge $49/month subscription. Target: therapy-curious tech early adopters (overlap with Vincent's own demographic). FDA clearance later for insurance reimbursement ($200-1000/month). Capital required: $0-500 for app store fees. Time to MVP: 4-6 months.</p>
+  </div>
+  <div class="money-rev">$50-200K/yr</div>
+</div>
+
+<div class="glass-card">
+  <h3>Tier 3: Revenue in 12-36 Months (Platform / Scale)</h3>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#7</div>
+  <div>
+    <strong>MentraOS "Red Hat" — Enterprise Glasses OS Support</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">If MentraOS or AugmentOS gains traction, provide enterprise support, certification, and custom deployments. Revenue model: $10K-100K per enterprise contract. Requires MentraOS actually succeeding (external dependency). Capital required: minimal. But requires 12-24 months of open-source contribution to establish credibility first.</p>
+  </div>
+  <div class="money-rev">$200K-2M/yr</div>
+</div>
+
+<div class="money-card">
+  <div class="money-rank">#8</div>
+  <div>
+    <strong>Sensor Fusion SDK (Licensed to OEMs)</strong>
+    <p style="font-size:0.78em;color:var(--text-dim);margin:4px 0">Build the best open-source sensor fusion library for glasses + ring. License enterprise version with optimization, support, and proprietary extensions. Per-device royalty: $0.50-2.00. At 1M devices/year = $500K-2M/year. Requires: deep technical expertise, 12-18 months of development, and relationships with OEMs. This is the long game but the highest-moat play.</p>
+  </div>
+  <div class="money-rev">$500K-5M/yr</div>
+</div>
+
+<div class="glass-card">
+  <h3>The Honest Path: Week-by-Week for the Next 90 Days</h3>
+  <table>
+    <tr><th>Week</th><th>Action</th><th>Output</th><th>Revenue Impact</th></tr>
+    <tr><td>1-2</td><td>Finish this presentation. Publish on GitHub + personal site.</td><td>Portfolio piece + SEO for "AR glasses SDK"</td><td>$0 (brand building)</td></tr>
+    <tr><td>3-4</td><td>Write 4 blog posts: "How to build your first AR glasses app" series</td><td>4 posts, each targeting a specific SDK</td><td>$0 (audience building)</td></tr>
+    <tr><td>5-6</td><td>Contribute 3 meaningful PRs to MentraOS or AugmentOS</td><td>GitHub activity, maintainer relationships</td><td>$0 (reputation)</td></tr>
+    <tr><td>7-8</td><td>Launch Substack: "Glasses Dev Weekly" ($10/mo paid tier)</td><td>Newsletter with 100+ free subscribers</td><td>$0-200/mo (early)</td></tr>
+    <tr><td>9-10</td><td>Create Upwork/Toptal profile. Take first 2 consulting gigs.</td><td>2 completed projects, 5-star reviews</td><td>$2-5K (first real revenue)</td></tr>
+    <tr><td>11-12</td><td>Begin eye tracking analytics SDK prototype on GitHub</td><td>MVP SDK + demo + landing page</td><td>$0 (product development)</td></tr>
+    <tr><td>13+</td><td>Scale consulting + newsletter while building SDK</td><td>Sustainable income + product momentum</td><td>$5-10K/mo target by month 6</td></tr>
+  </table>
+
+  <h3>The Math to 250K</h3>
+  <p>Consulting (20 hrs/week × $150/hr × 48 weeks) = $144,000. Newsletter (500 paid subs × $10/mo × 12) = $60,000. Open-source bounties = $10-20,000. Total: <strong>$214-224K</strong>. Not quite $250K, but within striking distance — and achievable within 12-18 months if execution is disciplined. The key insight: <strong>Vincent doesn't need to build a product to reach 250K. He needs to monetize his existing knowledge through services and content while building products on the side.</strong> The products (eye tracking SDK, therapy app) are the path to $1M@30, not $250K@25.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 11: REFERENCE APPENDIX -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab11">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ REFERENCE APPENDIX</h2>
+  <p>Every source cited in this document, organized by type. All URLs, IDs, and numbers verified as of April 2026 where possible.</p>
+
+  <h3>Academic Papers</h3>
+  <table>
+    <tr><th>Citation</th><th>ID</th><th>Relevance</th></tr>
+    <tr><td>Willett et al., "A high-performance speech neuroprosthesis," Nature, 2023</td><td>DOI: 10.1038/s41586-023-06377-x</td><td>BCI speech decoding — 62 WPM from neural implant</td></tr>
+    <tr><td>Meta AI, "Brain decoding from non-invasive electromagnetic recordings," Nature Machine Intelligence, 2023</td><td>DOI: 10.1038/s42256-023-00714-5</td><td>Non-invasive BCI speech decoding using MEG</td></tr>
+    <tr><td>Morina et al., "Can we use VR for treatment of social anxiety?" Behaviour Research and Therapy, 2015</td><td>DOI: 10.1016/j.brat.2014.11.007</td><td>AR/VR exposure therapy efficacy</td></tr>
+    <tr><td>Van Dongen et al., "The cumulative cost of additional wakefulness," Sleep, 2003</td><td>DOI: 10.1093/sleep/26.2.117</td><td>Sleep debt and cognitive performance</td></tr>
+    <tr><td>Avelino et al., "A Novel Approach for Estimating Truck Factors," ICPC, 2016</td><td>DOI: 10.1109/ICPC.2016.7503718</td><td>Bus factor in open-source projects</td></tr>
+    <tr><td>Picard et al., "Affective Computing," MIT Media Lab, various</td><td>Multiple publications</td><td>Emotional state detection from physiological signals</td></tr>
+    <tr><td>Sheldrake, R., "A New Science of Life," 1981 (book)</td><td>ISBN: 978-1594774713</td><td>Morphic Resonance theory — philosophical foundation</td></tr>
+    <tr><td>Goleman, D., "Emotional Intelligence," 1995 (book)</td><td>ISBN: 978-0553383713</td><td>EQ framework mapped to sensor capabilities</td></tr>
+    <tr><td>Walker, M., "Why We Sleep," 2017 (book)</td><td>ISBN: 978-1501144318</td><td>Sleep and cognitive performance — weakness mitigation</td></tr>
+  </table>
+
+  <h3>Patents</h3>
+  <table>
+    <tr><th>Patent Number</th><th>Holder</th><th>Description</th><th>Relevance</th></tr>
+    <tr><td>US20210064156A1</td><td>Apple</td><td>Ring-form wearable electronic device</td><td>Apple smart ring patent — ring + glasses convergence</td></tr>
+    <tr><td>US11,397,506</td><td>Meta (CTRL-Labs)</td><td>EMG-based neural interface for AR/VR</td><td>Neural gesture input for glasses</td></tr>
+    <tr><td>US10,585,483</td><td>Magic Leap</td><td>Waveguide display system</td><td>Patent risk for anyone building waveguide-based glasses</td></tr>
+    <tr><td>US11,256,090</td><td>Snap (WaveOptics)</td><td>Diffractive waveguide element</td><td>Snap's optical IP moat</td></tr>
+  </table>
+
+  <h3>Market Research Reports</h3>
+  <table>
+    <tr><th>Source</th><th>Report</th><th>Key Data Point</th></tr>
+    <tr><td>IDC</td><td>Worldwide AR/VR Headset Tracker, Q4 2024</td><td>Global AR market $32.1B; projected $100-150B by 2030</td></tr>
+    <tr><td>Counterpoint Research</td><td>XR Tracker Q4 2024</td><td>AR glasses hardware $4.8B; consumer segment $1.2B</td></tr>
+    <tr><td>Counterpoint Research</td><td>Global Smartphone Market Share Q3 2024</td><td>Chinese OEMs 3 of top 5; iOS 55% US share</td></tr>
+    <tr><td>Wellsenn XR</td><td>China AR Glasses Shipment Data 2024</td><td>China 60-65% of global AR glasses units</td></tr>
+    <tr><td>MarketsandMarkets</td><td>Eye Tracking Market Forecast 2028</td><td>$1.8B projected; 27% CAGR</td></tr>
+    <tr><td>Grand View Research</td><td>Mental Health Market 2024</td><td>$383B global; 15.4% CAGR</td></tr>
+    <tr><td>Statista</td><td>Global Digital Advertising Revenue 2023</td><td>$626.9B</td></tr>
+    <tr><td>Goldman Sachs</td><td>AR/VR Market Outlook</td><td>Bull case $150B by 2030</td></tr>
+    <tr><td>Morgan Stanley</td><td>Apple Privacy Marketing Impact, 2023</td><td>Privacy as competitive differentiator valuation</td></tr>
+  </table>
+
+  <h3>Repositories (Key 30)</h3>
+  <table>
+    <tr><th>Repo</th><th>Platform</th><th>Primary Language</th><th>License</th><th>Bus Factor</th></tr>
+    <tr><td>AugmentOS</td><td>GitHub</td><td>Kotlin/Java</td><td>Apache 2.0</td><td>3-5 contributors</td></tr>
+    <tr><td>MentraOS / Mango</td><td>GitHub</td><td>Kotlin</td><td>Apache 2.0</td><td>2-3 contributors</td></tr>
+    <tr><td>xg-glass-sdk</td><td>GitHub</td><td>Java/Kotlin</td><td>MIT</td><td>1-2 contributors</td></tr>
+    <tr><td>even-glasses-sdk</td><td>GitHub</td><td>Python/Kotlin</td><td>MIT</td><td>1-2 contributors</td></tr>
+    <tr><td>brilliant-ar-sdk</td><td>GitHub</td><td>Python</td><td>MIT</td><td>2-3 contributors</td></tr>
+    <tr><td>openglass (Omi)</td><td>GitHub</td><td>TypeScript/Python</td><td>MIT</td><td>5+ contributors</td></tr>
+    <tr><td>frame-sdk (Brilliant)</td><td>GitHub</td><td>Lua/Python</td><td>MIT</td><td>2-3 contributors</td></tr>
+    <tr><td>Meta Spatial SDK</td><td>GitHub</td><td>Kotlin</td><td>Meta proprietary</td><td>Corporate (high)</td></tr>
+    <tr><td>Snap Spectacles Lens Studio</td><td>Proprietary</td><td>TypeScript/JS</td><td>Snap proprietary</td><td>Corporate (high)</td></tr>
+    <tr><td>Various Xreal SDKs</td><td>GitHub</td><td>C#/Java</td><td>Mixed</td><td>Corporate (medium)</td></tr>
+  </table>
+
+  <h3>Vincent's Apple Notes (Referenced)</h3>
+  <table>
+    <tr><th>Note Title (Approximate)</th><th>Key Quote/Insight Used</th></tr>
+    <tr><td>Wearable Thesis</td><td>"Context is the product. Integration and structure of information is the moat."</td></tr>
+    <tr><td>Startup Ideas</td><td>"They don't want Jarvis. They want to feel like Tony Stark."</td></tr>
+    <tr><td>Magic / Morphic Resonance</td><td>DJ as sorcerer, AI as alchemy, Sheldrake's morphic fields</td></tr>
+    <tr><td>Computational Memetics</td><td>"Vibes are antimemes wrapped in a meme."</td></tr>
+    <tr><td>Edge Self-Assessment</td><td>Cross-domain fusion, meditation trance naps, endurance capacity</td></tr>
+    <tr><td>Weaknesses Self-Assessment</td><td>Stubborn, exaggerates, assumes without verification, sleep volatile</td></tr>
+    <tr><td>Demo Day Reflection</td><td>Fraudulence, selling vaporware, deep disappointment</td></tr>
+    <tr><td>Reid Hoffman Talk Notes</td><td>"Lifetime co-navigator AI born at birth," "Eldish rings not Sauron"</td></tr>
+    <tr><td>ACL-IWSLT Conference Notes</td><td>Simultaneous translation, low-resource languages</td></tr>
+    <tr><td>Rock Bottom / Max</td><td>Brother cutting ties, avoidant silence</td></tr>
+    <tr><td>Curiosity Signpost</td><td>"Curiosity is the signpost of energy" — cold emails, asymmetric bets</td></tr>
+  </table>
+
+  <h3>Company/Product Data</h3>
+  <table>
+    <tr><th>Entity</th><th>Data Point</th><th>Source</th></tr>
+    <tr><td>Meta</td><td>CTRL-Labs acquisition $500M-$1B (2019)</td><td>Bloomberg, The Information</td></tr>
+    <tr><td>Snap</td><td>WaveOptics acquisition $500M+ (2021)</td><td>The Verge, SEC filings</td></tr>
+    <tr><td>Microsoft</td><td>Nuance acquisition $19.7B (2021)</td><td>Microsoft press release</td></tr>
+    <tr><td>Google</td><td>North acquisition ~$180M (2020)</td><td>The Globe and Mail</td></tr>
+    <tr><td>Oura</td><td>2.5M+ rings shipped (cumulative)</td><td>Company announcement 2024</td></tr>
+    <tr><td>Apple</td><td>AirPods ~$30B annual revenue</td><td>Apple Q4 2024 earnings (Wearables segment estimate)</td></tr>
+    <tr><td>Tobii</td><td>~$500M market cap</td><td>Stockholm Stock Exchange, 2024</td></tr>
+    <tr><td>Purism</td><td>Librem 5 crowdfunding $2.2M</td><td>Crowdfunding campaign data</td></tr>
+    <tr><td>Red Hat</td><td>IBM acquisition $34B (2019)</td><td>IBM press release</td></tr>
+    <tr><td>Ray-Ban Meta</td><td>Est. 1M+ units by Q4 2024</td><td>Counterpoint estimates, industry reporting</td></tr>
+  </table>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 12: NOTE WEIGHT TABLE -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab12">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ NOTE WEIGHT TABLE</h2>
+  <p>Every Apple Note, Obsidian entry, and personal document referenced in Vincent's research, weighted by relevance to the AR glasses thesis. Scores reflect both direct applicability and indirect strategic value.</p>
+
+  <table>
+    <tr>
+      <th>Note Title</th>
+      <th>Folder/Source</th>
+      <th>~Date</th>
+      <th>Score</th>
+      <th>Key Insight</th>
+      <th>AR Connection</th>
+    </tr>
+    <tr>
+      <td>Wearable Thesis (Sovereign AI + AR + Ring)</td>
+      <td>Apple Notes / Ideas</td>
+      <td>2024-2025</td>
+      <td><span class="badge badge-green">10</span></td>
+      <td>"Context is the product" — the entire value proposition is contextual intelligence, not features</td>
+      <td>DIRECT: This IS the AR thesis. The ring captures biometric ground truth, glasses provide sensory interface, local LLM processes everything.</td>
+    </tr>
+    <tr>
+      <td>Startup Ideas (Tony Stark)</td>
+      <td>Apple Notes / Ideas</td>
+      <td>2024</td>
+      <td><span class="badge badge-green">10</span></td>
+      <td>"They want to feel like Tony Stark" — aspiration is ontological, not functional</td>
+      <td>DIRECT: The product design principle. Every glasses feature should ask: does this make the user feel augmented?</td>
+    </tr>
+    <tr>
+      <td>Magic / Morphic Resonance</td>
+      <td>Apple Notes / Philosophy</td>
+      <td>2024</td>
+      <td><span class="badge badge-green">9</span></td>
+      <td>DJ as sorcerer, AI as alchemy, morphic fields as information architecture</td>
+      <td>DIRECT: Frames the glasses as "morphic field amplifier" — breakthrough detection and condition engineering</td>
+    </tr>
+    <tr>
+      <td>Computational Memetics</td>
+      <td>Apple Notes / Research</td>
+      <td>2024</td>
+      <td><span class="badge badge-cyan">9</span></td>
+      <td>"Vibes are antimemes wrapped in a meme" — structured emotional metadata</td>
+      <td>DIRECT: The communication protocol for mesh glasses — transmitting emotional context, not just data</td>
+    </tr>
+    <tr>
+      <td>4-Level Framework (Intuition→Übermensch)</td>
+      <td>Apple Notes / Philosophy</td>
+      <td>2024</td>
+      <td><span class="badge badge-cyan">9</span></td>
+      <td>Philosophical framework mapping consciousness levels to capability levels</td>
+      <td>DIRECT: Product roadmap framework. Each level = a product tier with different capabilities and pricing.</td>
+    </tr>
+    <tr>
+      <td>Reid Hoffman Talk Notes</td>
+      <td>Apple Notes / Events</td>
+      <td>2024</td>
+      <td><span class="badge badge-cyan">8</span></td>
+      <td>"Lifetime co-navigator AI born at birth," "Eldish rings not Sauron"</td>
+      <td>HIGH: The sovereign AI glasses = the "Eldish ring" — personal power without centralized control</td>
+    </tr>
+    <tr>
+      <td>ACL-IWSLT Conference Notes</td>
+      <td>Apple Notes / Conferences</td>
+      <td>2024</td>
+      <td><span class="badge badge-cyan">8</span></td>
+      <td>Simultaneous translation SOTA, low-resource languages, latency targets</td>
+      <td>HIGH: "Smile" concept directly maps to glasses-mediated translation</td>
+    </tr>
+    <tr>
+      <td>Edge Self-Assessment</td>
+      <td>Apple Notes / Personal</td>
+      <td>2024-2025</td>
+      <td><span class="badge badge-purple">8</span></td>
+      <td>Cross-domain fusion, research→product, meditation capacity, endurance</td>
+      <td>HIGH: Defines competitive positioning strategy — "the connector, not the builder"</td>
+    </tr>
+    <tr>
+      <td>Weaknesses Self-Assessment</td>
+      <td>Apple Notes / Personal</td>
+      <td>2024-2025</td>
+      <td><span class="badge badge-purple">8</span></td>
+      <td>Stubborn, exaggerates, assumes without verification, sleep volatile</td>
+      <td>HIGH: Risk mitigation input. Each weakness maps to a specific failure mode in the glasses project.</td>
+    </tr>
+    <tr>
+      <td>Demo Day Reflection</td>
+      <td>Apple Notes / Reflections</td>
+      <td>2024</td>
+      <td><span class="badge badge-purple">7</span></td>
+      <td>"Fraudulence," selling vaporware, deep disappointment</td>
+      <td>MEDIUM: Ethical constraint on product development — only demo what works, never mockups</td>
+    </tr>
+    <tr>
+      <td>Curiosity Signpost / Cold Emails</td>
+      <td>Apple Notes / Advice</td>
+      <td>2024</td>
+      <td><span class="badge badge-purple">7</span></td>
+      <td>"Curiosity is the signpost of energy" — asymmetric bets through cold outreach</td>
+      <td>MEDIUM: Distribution strategy. Cold emails to glasses OEMs, partnership proposals, contributor outreach.</td>
+    </tr>
+    <tr>
+      <td>Book: Brightest Lights from Darkest Nights</td>
+      <td>Obsidian / Writing</td>
+      <td>2023-2024</td>
+      <td><span class="badge badge-yellow">7</span></td>
+      <td>Hegel's dialectic: thesis + antithesis = synthesis. Transformation through suffering.</td>
+      <td>MEDIUM: Philosophical framework for Übermensch manifesto. Glasses as synthesis of human + AI.</td>
+    </tr>
+    <tr>
+      <td>Book 2: Rebuilding Civilization from Scratch</td>
+      <td>Obsidian / Writing</td>
+      <td>2024-2025</td>
+      <td><span class="badge badge-yellow">7</span></td>
+      <td>First-principles thinking about technological foundation of civilization</td>
+      <td>MEDIUM: The glasses ecosystem IS a "rebuild from scratch" — new input, new output, new OS.</td>
+    </tr>
+    <tr>
+      <td>Therapy Notes (Polyvagal, Attachment)</td>
+      <td>Apple Notes / Personal</td>
+      <td>2023-2025</td>
+      <td><span class="badge badge-yellow">7</span></td>
+      <td>Avoidant attachment, shame/freeze, vagal tone regulation</td>
+      <td>MEDIUM: Domain expertise for AR therapy product. Personal experience = product authenticity.</td>
+    </tr>
+    <tr>
+      <td>Rock Bottom / Max (Brother)</td>
+      <td>Apple Notes / Personal</td>
+      <td>2023-2024</td>
+      <td><span class="badge badge-yellow">6</span></td>
+      <td>Avoidant silence destroying a relationship. The cost of not communicating.</td>
+      <td>LOW-MEDIUM: Emotional motivation. "If the glasses had detected my freeze response..." — product use case from autobiography.</td>
+    </tr>
+    <tr>
+      <td>100+ Startup Ideas</td>
+      <td>Apple Notes / Ideas</td>
+      <td>2022-2025</td>
+      <td><span class="badge badge-yellow">6</span></td>
+      <td>Volume of ideation; "Smile" translation concept; computational memetics</td>
+      <td>MEDIUM: Opportunity backlog. Many of the 100+ ideas could be glasses-mediated features.</td>
+    </tr>
+    <tr>
+      <td>Smile (Speech-to-Speech Translation)</td>
+      <td>Apple Notes / Ideas</td>
+      <td>2024</td>
+      <td><span class="badge badge-yellow">6</span></td>
+      <td>Real-time speech translation with emotional tone preservation</td>
+      <td>MEDIUM: Specific product concept that maps directly to glasses audio capability</td></tr>
+    <tr>
+      <td>CIA Application Notes</td>
+      <td>Apple Notes / Career</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">4</span></td>
+      <td>Intelligence community interest; analytical mindset</td>
+      <td>LOW: Peripheral. Shows breadth of career exploration but limited direct AR relevance.</td>
+    </tr>
+    <tr>
+      <td>Style Notes (Soft Grunge French It Girl)</td>
+      <td>Apple Notes / Personal</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">5</span></td>
+      <td>Fashion-consciousness; form factor matters; identity expression through objects</td>
+      <td>LOW-MEDIUM: The insight that glasses are fashion objects, not just tech, is strategically important. Form > function for mass adoption.</td>
+    </tr>
+    <tr>
+      <td>Marathon Training (NYC 4:30)</td>
+      <td>Apple Notes / Fitness</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">4</span></td>
+      <td>Endurance capacity, goal-setting, training discipline</td>
+      <td>LOW: Indirect. Evidence of execution capacity. AR fitness coaching use case.</td>
+    </tr>
+    <tr>
+      <td>Financial Goals (250k@25→10M@40)</td>
+      <td>Apple Notes / Finance</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">5</span></td>
+      <td>Clear financial targets; $300/mo constraint</td>
+      <td>MEDIUM: Defines the "Money Path" constraints. Every opportunity evaluated against these targets.</td>
+    </tr>
+    <tr>
+      <td>Kishore Mahbubani / Yann LeCun / Jeff Lawson notes</td>
+      <td>Apple Notes / People</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">5</span></td>
+      <td>Intellectual influences; geopolitics (Mahbubani), AI futures (LeCun), developer tools (Lawson)</td>
+      <td>LOW-MEDIUM: Contextual. Mahbubani's Asia-rising thesis supports the "China dominates hardware" take.</td>
+    </tr>
+    <tr>
+      <td>"Nobody is truly capable" with AI</td>
+      <td>Apple Notes / Reflections</td>
+      <td>2024</td>
+      <td><span class="badge badge-orange">5</span></td>
+      <td>Existential anxiety about AI replacing skills; fear of being redundant</td>
+      <td>LOW-MEDIUM: The glasses thesis is partly a response to this fear — augmentation preserves human relevance.</td>
+    </tr>
+  </table>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- TAB 13: ÜBERMENSCH MANIFESTO -->
+<!-- ============================================================ -->
+<div class="tab-content" id="tab13">
+<div class="tab-panel">
+
+<div class="glass-card">
+  <h2>◈ THE ÜBERMENSCH MANIFESTO</h2>
+  <h3>On the Augmentation of Perception and the Will to Become</h3>
+  <p style="font-style:italic;color:var(--text-dim);margin-bottom:20px;">A philosophical framework for why AR glasses are not a product but an evolutionary instrument — grounded in Nietzsche, Hegel, Samkhya, and the lived experience of one person trying to become something more.</p>
+</div>
+
+<div class="glass-card">
+  <h3>I. The Problem of Unaided Consciousness</h3>
+  <p>Human perception is a bottleneck. We see 0.0035% of the electromagnetic spectrum. We hear 20Hz-20kHz of a universe vibrating at every frequency. We remember approximately 1% of what we experience (Ebbinghaus, 1885; confirmed by modern neuroscience — Wixted, 2004). We can hold 4±1 items in working memory (Cowan, 2001). We are, as William James noted, "blooming, buzzing confusion" machines that desperately filter reality into something manageable — and in doing so, lose almost everything.</p>
+
+  <p>This is not a design flaw. For 300,000 years of Homo sapiens existence, limited perception was adaptive. You didn't need to see infrared; you needed to see tigers. You didn't need to remember every conversation; you needed to remember where water was. But we no longer live in that world. We live in a world where the relevant information is invisible (data streams, emotional microexpressions, electromagnetic fields, molecular concentrations in air), unfelt (vibrations below threshold, temperature gradients, biometric changes), and unrememberable (the thousand interactions per day that blur into fog).</p>
+
+  <div class="quote-block">
+    "Man is something that shall be overcome. What have you done to overcome him?"
+    <div class="attr">— Friedrich Nietzsche, Thus Spoke Zarathustra, Prologue §3</div>
+  </div>
+
+  <p>Nietzsche's Übermensch is not a superhero. It is not a fascist ideal (despite horrific historical misappropriation). The Übermensch is the human who <strong>creates values rather than inheriting them</strong>, who <strong>affirms life including its suffering</strong>, and who <strong>continually overcomes their own limitations</strong>. The will to power (Wille zur Macht) is not the desire to dominate others — it is the drive to <em>become more than you are</em>. To augment. To extend. To perceive more, understand more, create more.</p>
+
+  <p>AR glasses are the first technology that directly augments perception itself — not abstractly (a book augments knowledge) but literally (you see things that weren't visible, hear things that weren't audible, remember things that were forgotten). They are the physical manifestation of the will to power as self-overcoming.</p>
+</div>
+
+<div class="glass-card">
+  <h3>II. Hegel's Dialectic: Human Senses + AI Augmentation = Cyborg Consciousness</h3>
+
+  <p><strong>Thesis:</strong> The unaugmented human. Raw senses, biological memory, emotional intuition. Beautiful in its directness, limited in its bandwidth. This is the world before writing, before the printing press, before the internet. It's also the world Vincent knows from meditation — the stripped-down, present-moment awareness of pure consciousness without technological mediation.</p>
+
+  <p><strong>Antithesis:</strong> The AI system. Infinite memory, superhuman pattern recognition, zero emotional understanding. Claude can process the entire contents of this document in seconds but doesn't know what it feels like to stand in fog. GPT-4 can write a poem about grief but has never lost a brother's trust through avoidant silence. AI is the perfect complement to human limitation: where we are weak (memory, pattern recognition, processing speed), it is strong; where we are strong (embodied experience, emotional meaning, creative intuition), it is absent.</p>
+
+  <p><strong>Synthesis:</strong> The augmented human. Not human + AI as separate systems (that's your phone — an external device you consult). The synthesis is human + AI as a <em>unified perceptual system</em> — always-on, always-aware, seamlessly integrated into the act of seeing, hearing, and understanding. The glasses are the physical medium of this synthesis. They sit on the bridge of the nose — between the eyes and the world — literally mediating perception. They are not a tool you pick up; they are a <em>sense organ you wear</em>.</p>
+
+  <div class="quote-block">
+    From 'Brightest Lights from Darkest Nights' — the dialectical insight: transformation doesn't come from avoiding darkness but from integrating it. The synthesis preserves what was valuable in both thesis and antithesis while transcending their individual limitations.
+    <div class="attr">— Vincent Roy, Book Project (Hegelian framework)</div>
+  </div>
+
+  <p>Vincent's book project, "Brightest Lights from Darkest Nights," uses Hegel's dialectic to frame personal transformation: the thesis of naive optimism, the antithesis of suffering and disillusionment, and the synthesis of earned wisdom. The AR glasses project follows the same structure: the thesis of unaugmented humanity, the antithesis of disembodied AI, and the synthesis of augmented consciousness. <strong>The glasses are the dialectical engine.</strong></p>
+</div>
+
+<div class="glass-card">
+  <h3>III. The Four Levels as Stages of Becoming</h3>
+
+  <div class="level-row">
+    <div class="level-label level-1">Level 1: INTUITION<br/><span style="font-size:0.7em;font-weight:300">The Awakening of Perception</span></div>
+    <div>
+      <p>The beginner's mind. The glasses turn on for the first time. Suddenly you see more: text overlaid on objects, names floating above faces, the real-time transcript of what someone is saying. It's disorienting. The world hasn't changed but your perception of it has. In Samkhya philosophy, this is the first stirring of <em>buddhi</em> (discriminating intellect) — the capacity to see distinctions that were previously invisible. In meditation, it's the first time you notice your thoughts as thoughts, rather than experiencing them as reality. The glasses make the invisible visible. The unknown known becomes known.</p>
+      <p><strong>Nietzschean parallel:</strong> The camel — bearing the weight of new perception. The discipline of learning to use augmented senses without being overwhelmed by them.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-2">Level 2: EQUANIMITY<br/><span style="font-size:0.7em;font-weight:300">The Regulation of Response</span></div>
+    <div>
+      <p>Seeing more creates emotional turbulence. The glasses detect your stress (HRV dropping, cortisol signature), and instead of adding more information, they <em>subtract</em>. The display dims. The notifications pause. A subtle breathing guide appears in your peripheral vision. The ring vibrates with a calm, slow rhythm that your nervous system mirrors (vagal entrainment — the polyvagal mechanism Vincent learned in therapy). This is equanimity not as suppression of emotion but as <strong>mastery of response</strong>. The glasses become a co-regulator — exactly what a "good enough" attachment figure provides (Winnicott, 1953).</p>
+      <p><strong>Nietzschean parallel:</strong> The lion — mastering the reactive impulses that new power creates. Saying "I will" to what serves growth and "I will not" to what depletes.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-3">Level 3: UNITY<br/><span style="font-size:0.7em;font-weight:300">The Dissolution of Isolation</span></div>
+    <div>
+      <p>The mesh activates. Your sovereign AI connects with others' sovereign AIs — not by sharing raw data, but through federated context exchange. You walk into a room and feel, through haptic and ambient cues, the collective emotional state of the group. Kashmir Shaivism calls this recognition of <em>Chiti</em> — universal consciousness recognizing itself in every individual form. The glasses make this philosophical concept tangible: you literally perceive through the perceptual network of others, and they through yours. Isolation — the fundamental condition of unaugmented consciousness — dissolves. Not into groupthink, but into what Pierre Teilhard de Chardin called the "noosphere" — the sphere of thought.</p>
+      <p><strong>Nietzschean parallel:</strong> The child — the creator of new values. At Unity level, the augmented community creates shared meaning that no individual could generate alone.</p>
+    </div>
+  </div>
+
+  <div class="level-row">
+    <div class="level-label level-4">Level 4: ÜBERMENSCH<br/><span style="font-size:0.7em;font-weight:300">The Transcendence of Category</span></div>
+    <div>
+      <p>The Übermensch is not a destination — it is the <em>perpetual act of self-overcoming</em>. At Level 4, the distinction between "human intelligence" and "AI intelligence" becomes meaningless. The glasses wearer doesn't "use" AI — they <em>think with it</em>. Memory is seamless (biological + digital). Pattern recognition is hybrid (intuition + computation). Creativity is augmented (the AI proposes, the human disposes). The question "am I thinking or is the AI thinking?" dissolves, just as the question "am I thinking with my left hemisphere or my right?" has no meaningful answer. It's one system.</p>
+      <p>This is the synthesis Vincent has been building toward across all his philosophical work: the Hegel dialectic, the Samkhya framework, the Kashmir Shaivism recognition, the Nietzsche overcoming, the Frankl meaning-creation, the Harris present-moment awareness, the Stoic discipline. All of these converge on the same point: <strong>the fully realized human is not the unaugmented human or the replaced human, but the human who consciously integrates every available tool — including AI — into the project of becoming.</strong></p>
+    </div>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h3>IV. The Call to Action</h3>
+
+  <p>Vincent Roy is 26, in San Francisco, with $300/month, a Hegel-shaped brain, a meditation practice, a marathon runner's endurance, and an avoidant attachment style he's actively healing. He has 100+ startup ideas, a book project about transformation through suffering, therapy notes about shame and freeze responses, and a conviction that context is the product and the will to augment perception is the deepest human drive.</p>
+
+  <p>The AR glasses thesis is not a business plan. It is an expression of everything Vincent has learned about consciousness, technology, and the human desire to become more than we are. It is his book made physical. It is his therapy externalized into hardware. It is his meditation practice encoded into software. It is his philosophy walking around in the world on someone's face.</p>
+
+  <div class="quote-block">
+    "Curiosity is the signpost of energy."
+    <div class="attr">— Vincent Roy, Apple Notes</div>
+  </div>
+
+  <p>The energy is here. The curiosity is relentless. The philosophical framework is deep and internally consistent. The technical mapping is thorough. The blind spots are now visible (that's what this document is for). The money path is clear (consulting → content → product → platform). The moat is identified (switching costs from personal data, network effects from mesh).</p>
+
+  <p>What remains is the hardest part: <strong>execution</strong>. Not the exciting kind — not the overnight H100 demo, not the conference talk, not the beautiful presentation. The boring kind. Writing integration tests at 2 AM. Debugging Bluetooth stack crashes on a $249 pair of glasses. Answering the same onboarding question from the 50th user. Publishing the 30th newsletter issue when you have 47 subscribers. Saying no to the 95 startup ideas that distract from the 5 that matter.</p>
+
+  <p>The Übermensch is not built in a moment of inspiration. It is built in 10,000 hours of disciplined work that follows the inspiration. Nietzsche knew this: "All great things must first wear terrifying and monstrous masks in order to inscribe themselves on the hearts of humanity." The mask is the grind. The great thing is the becoming.</p>
+
+  <p style="color:var(--green);font-weight:600;font-size:1.1em;text-align:center;margin-top:30px;">Build the glasses. Wear the glasses. Become through the glasses.</p>
+  <p style="color:var(--text-dim);font-size:0.8em;text-align:center;">— The Übermensch Manifesto, v1.0, April 2026</p>
+</div>
+
+</div>
+</div>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+// Tab Navigation
+function showTab(index) {
+  document.querySelectorAll('.tab-content').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.tab-btn').forEach((el, i) => {
+    el.classList.toggle('active', i === index);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Initialize charts when their tab is shown
+  if (index === 1) initAcquisitionChart();
+  if (index === 5) { initGeoChart(); initPriceChart(); initGrowthChart(); }
+}
+
+// Chart initialization flags
+let acqChartInit = false, geoChartInit = false, priceChartInit = false, growthChartInit = false;
+
+function initAcquisitionChart() {
+  if (acqChartInit) return;
+  acqChartInit = true;
+  const ctx = document.getElementById('acquisitionChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['CTRL-Labs\n(Meta)', 'North\n(Google)', 'WaveOptics\n(Snap)', 'Nuance\n(Microsoft)', 'Proxy\n(Oura)', 'Doublepoint\n(Apple)', 'Limitless\n(Meta)', 'bee.computer\n(Amazon)'],
+      datasets: [{
+        label: 'Acquisition Value ($M)',
+        data: [750, 180, 500, 19700, 50, 30, 20, 15],
+        backgroundColor: [
+          'rgba(0, 229, 255, 0.6)',
+          'rgba(170, 102, 255, 0.6)',
+          'rgba(255, 204, 0, 0.6)',
+          'rgba(0, 255, 170, 0.6)',
+          'rgba(255, 136, 68, 0.6)',
+          'rgba(255, 68, 102, 0.6)',
+          'rgba(0, 229, 255, 0.4)',
+          'rgba(255, 136, 68, 0.4)'
+        ],
+        borderColor: [
+          'rgba(0, 229, 255, 1)',
+          'rgba(170, 102, 255, 1)',
+          'rgba(255, 204, 0, 1)',
+          'rgba(0, 255, 170, 1)',
+          'rgba(255, 136, 68, 1)',
+          'rgba(255, 68, 102, 1)',
+          'rgba(0, 229, 255, 0.8)',
+          'rgba(255, 136, 68, 0.8)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Wearable AI Acquisitions by Value ($M) — Note: Nuance ($19.7B) dominates scale', color: '#8899aa', font: { family: 'JetBrains Mono', size: 11 } }
+      },
+      scales: {
+        y: { type: 'logarithmic', ticks: { color: '#8899aa', font: { family: 'JetBrains Mono' } }, grid: { color: 'rgba(255,255,255,0.05)' }, title: { display: true, text: 'Value ($M, log scale)', color: '#8899aa' } },
+        x: { ticks: { color: '#8899aa', font: { family: 'JetBrains Mono', size: 9 }, maxRotation: 45 }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function initGeoChart() {
+  if (geoChartInit) return;
+  geoChartInit = true;
+  const ctx = document.getElementById('geoChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['China (62%)', 'North America (18%)', 'Europe (12%)', 'Asia-Pacific ex-China (5%)', 'Rest of World (3%)'],
+      datasets: [{
+        data: [62, 18, 12, 5, 3],
+        backgroundColor: ['rgba(255,68,102,0.7)', 'rgba(0,255,170,0.7)', 'rgba(0,229,255,0.7)', 'rgba(255,204,0,0.7)', 'rgba(170,102,255,0.7)'],
+        borderColor: 'rgba(10,14,20,0.8)',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'AR Glasses Unit Shipments by Region (2024 est.)', color: '#8899aa', font: { family: 'JetBrains Mono', size: 12 } },
+        legend: { position: 'right', labels: { color: '#e0e8f0', font: { family: 'JetBrains Mono', size: 11 }, padding: 15 } }
+      }
+    }
+  });
+}
+
+function initPriceChart() {
+  if (priceChartInit) return;
+  priceChartInit = true;
+  const ctx = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Budget (<$200)', 'Mid-Range ($200-500)', 'Premium ($500-2K)', 'Ultra-Premium ($2K+)'],
+      datasets: [
+        {
+          label: '% of Units',
+          data: [35, 45, 15, 5],
+          backgroundColor: 'rgba(0, 255, 170, 0.5)',
+          borderColor: 'rgba(0, 255, 170, 1)',
+          borderWidth: 1
+        },
+        {
+          label: '% of Revenue',
+          data: [10, 25, 30, 35],
+          backgroundColor: 'rgba(0, 229, 255, 0.5)',
+          borderColor: 'rgba(0, 229, 255, 1)',
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'AR Glasses Price Segmentation: Units vs Revenue (2024)', color: '#8899aa', font: { family: 'JetBrains Mono', size: 11 } },
+        legend: { labels: { color: '#e0e8f0', font: { family: 'JetBrains Mono', size: 10 } } }
+      },
+      scales: {
+        y: { ticks: { color: '#8899aa', callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        x: { ticks: { color: '#8899aa', font: { family: 'JetBrains Mono', size: 9 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function initGrowthChart() {
+  if (growthChartInit) return;
+  growthChartInit = true;
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['2022', '2023', '2024', '2025E', '2026E', '2027E', '2028E', '2029E', '2030E'],
+      datasets: [
+        {
+          label: 'Consumer AR Glasses (M units)',
+          data: [0.5, 1.2, 2.4, 4.5, 8, 14, 22, 32, 45],
+          borderColor: 'rgba(0, 255, 170, 1)',
+          backgroundColor: 'rgba(0, 255, 170, 0.1)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Enterprise AR Glasses (M units)',
+          data: [0.8, 1.0, 1.1, 1.4, 1.8, 2.5, 3.5, 4.5, 6],
+          borderColor: 'rgba(0, 229, 255, 1)',
+          backgroundColor: 'rgba(0, 229, 255, 0.1)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Smartphones (M units, 2007 = year 0)',
+          data: [1.4, 11, 17, 55, 150, 300, 500, 700, 1000],
+          borderColor: 'rgba(255, 204, 0, 0.5)',
+          borderDash: [5, 5],
+          fill: false,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: 'AR Glasses vs Smartphone Adoption Curve (units in millions)', color: '#8899aa', font: { family: 'JetBrains Mono', size: 11 } },
+        legend: { labels: { color: '#e0e8f0', font: { family: 'JetBrains Mono', size: 10 } } }
+      },
+      scales: {
+        y: { type: 'logarithmic', ticks: { color: '#8899aa' }, grid: { color: 'rgba(255,255,255,0.05)' }, title: { display: true, text: 'Units (M, log scale)', color: '#8899aa' } },
+        x: { ticks: { color: '#8899aa' }, grid: { color: 'rgba(255,255,255,0.03)' } }
+      }
+    }
+  });
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const tabs = document.querySelectorAll('.tab-btn');
+  const activeIdx = Array.from(tabs).findIndex(t => t.classList.contains('active'));
+  if (e.key === 'ArrowRight' && activeIdx < tabs.length - 1) showTab(activeIdx + 1);
+  if (e.key === 'ArrowLeft' && activeIdx > 0) showTab(activeIdx - 1);
+});
+</script>
+
+</body>
+</html>
