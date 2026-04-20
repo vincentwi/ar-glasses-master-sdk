@@ -1,0 +1,31 @@
+instances:
+  - url: vincent.docs.buildwithfern.com
+
+title: AR Glasses Master SDK | Documentation
+
+navigation:
+  - section: Getting Started
+    contents:
+      - page: Welcome
+        path: ./pages/welcome.mdx
+      - page: Architecture
+        path: ./pages/architecture.mdx
+      - page: Capabilities Matrix
+        path: ./pages/capabilities.mdx
+  - api: API Reference
+  - section: Reference Guides
+    contents:
+      - page: USB VID/PID Registry
+        path: ./pages/vid-pid-registry.mdx
+      - page: Protocol Cheatsheet
+        path: ./pages/protocol-cheatsheet.mdx
+      - page: Sensor Fusion Guide
+        path: ./pages/sensor-fusion.mdx
+
+colors:
+  accentPrimary:
+    dark: "#818cf8"
+    light: "#4f46e5"
+  background:
+    dark: "#0f172a"
+    light: "#ffffff"

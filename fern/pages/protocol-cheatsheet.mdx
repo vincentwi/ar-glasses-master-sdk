@@ -1,0 +1,33 @@
+---
+title: Protocol Cheatsheet
+---
+
+Quick reference for communication protocols used across the AR glasses ecosystem.
+
+## BLE GATT Profiles
+
+| Profile | Service UUID | Use | Devices |
+|---------|-------------|-----|---------|
+| Nordic UART (NUS) | 6E400001-... | Bidirectional data | MentraOS, Frame |
+| Device Access (DAT) | Custom | Device config | Everysight |
+| CXR-Mesh | Custom | Mesh networking | CoreDevices |
+
+## USB HID
+
+All XREAL/VITURE/Rokid glasses use USB HID for IMU data streaming.
+- Packet size: 45-64 bytes depending on device
+- CRC32 validation on XREAL Light
+- Message framing: length-prefixed with type byte
+
+## IPC (Inter-Process Communication)
+
+RayNeo uses Android IPC (AIDL/Binder) for:
+- GPS streaming from phone: GPSIPCHelper
+- Ring data: RingIPCHelper
+- Mobile connection state: MobileState
+
+## WebSocket
+
+MentraOS architecture: Glasses to Phone to Cloud via WebSocket.
+- Phone app acts as bridge
+- Cloud orchestrates third-party integrations

@@ -1,0 +1,33 @@
+---
+title: Architecture
+subtitle: How the AR Glasses ecosystem fits together
+---
+
+## System Layers
+
+The AR glasses ecosystem operates across 4 layers:
+
+### Layer 1: Hardware and Firmware
+Low-level device drivers, USB/BLE communication, IMU sensor fusion.
+- **XRLinuxDriver** (C) — Multi-brand Linux driver with libusb hotplug
+- **Fusion** (C) — Madgwick AHRS sensor fusion
+- **headset-utils** (Rust) — Cross-device IMU abstraction with C FFI
+
+### Layer 2: Platform SDKs
+Device-specific SDKs provided by manufacturers.
+- **xg-glass-sdk** (Python) — Cross-device CLI for Rokid, Meta, Frame, RayNeo
+- **MentraOS** (TypeScript/React Native) — Full OS stack for smart glasses
+- **XREAL SDK** (Unity) — Unity XR Plugin for XREAL devices
+- **RayNeo ARDK** (Unity/Android) — 3DOF/6DOF with SLAM
+
+### Layer 3: XR Runtimes
+Standard interfaces that abstract hardware differences.
+- **OpenXR** — Khronos standard (400+ functions, 700+ structs)
+- **Monado** — Open-source OpenXR runtime (219+ xrt_* types)
+- **StardustXR** — 3D display server (FlatBuffers over Unix sockets)
+
+### Layer 4: Applications
+End-user applications and tools.
+- **RayDesk** — Moonlight streaming to AR glasses
+- **TAPLINKX3** — AR browser with AI chat
+- **Overpass + Gemini** — Location-aware AR overlays

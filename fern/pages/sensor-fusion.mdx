@@ -1,0 +1,34 @@
+---
+title: Sensor Fusion Guide
+---
+
+Guide to IMU sensor fusion implementations across the ecosystem.
+
+## Fusion Library (C) — xioTechnologies/Fusion
+
+The gold standard. Madgwick revised AHRS algorithm with:
+- Acceleration rejection (ignores spikes during motion)
+- Magnetic rejection (ignores interference)
+- Gyroscope bias estimation (auto-calibrates drift)
+
+Key functions:
+- `FusionAhrsUpdate()` — Main update with gyro + accel + mag
+- `FusionAhrsGetQuaternion()` — Get current orientation
+- `FusionAhrsGetEuler()` — Get roll/pitch/yaw in degrees
+- `FusionAhrsSetSettings()` — Configure rejection thresholds
+- `FusionBiasUpdate()` — Update gyro bias estimate
+- `FusionCompassCalculateHeading()` — Tilt-compensated heading
+
+## headset-utils (Rust)
+
+Naive complementary filter optimized for XR headsets:
+- Supports: Rokid, XREAL, Mad Gaze, Grawoow
+- C FFI exports: StartConnection, StopConnection, GetEuler, GetQuaternion
+- Automatic device detection via USB VID/PID
+
+## XRLinuxDriver (C)
+
+Built-in quaternion math library:
+- Connection pool for multi-device
+- Dead-zone smoothing
+- Plugin architecture for output (mouse, joystick, libevdev)
