@@ -1,0 +1,73 @@
+name: Deploy API Docs to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Prepare Swagger UI site
+        run: |
+          mkdir -p _site/swagger
+          
+          # Download Swagger UI dist files
+          SWAGGER_VERSION="5.17.14"
+          curl -sL "https://unpkg.com/swagger-ui-dist@${SWAGGER_VERSION}/swagger-ui-bundle.js" -o _site/swagger/swagger-ui-bundle.js
+          curl -sL "https://unpkg.com/swagger-ui-dist@${SWAGGER_VERSION}/swagger-ui-standalone-preset.js" -o _site/swagger/swagger-ui-standalone-preset.js
+          curl -sL "https://unpkg.com/swagger-ui-dist@${SWAGGER_VERSION}/swagger-ui.css" -o _site/swagger/swagger-ui.css
+          
+          # Copy custom index.html and openapi spec
+          cp docs/swagger/index.html _site/swagger/index.html
+          cp openapi.yaml _site/openapi.yaml
+          cp openapi.yaml _site/swagger/openapi.yaml
+          
+          # Patch index.html to use local assets instead of CDN
+          sed -i 's|https://unpkg.com/swagger-ui-dist@5/swagger-ui.css|swagger-ui.css|g' _site/swagger/index.html
+          sed -i 's|https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js|swagger-ui-bundle.js|g' _site/swagger/index.html
+          sed -i 's|https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js|swagger-ui-standalone-preset.js|g' _site/swagger/index.html
+          
+          # Point to local openapi.yaml
+          sed -i "s|url: '../../openapi.yaml'|url: 'openapi.yaml'|g" _site/swagger/index.html
+          
+          # Create root redirect
+          cat > _site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><meta http-equiv="refresh" content="0;url=swagger/" /></head>
+          <body><a href="swagger/">Redirecting to API docs...</a></body>
+          </html>
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

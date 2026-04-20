@@ -1,125 +1,221 @@
-# AR Glasses Master SDK Reference
+<div align="center">
+
+# 🕶️ AR Glasses Master SDK
 
 **The most comprehensive open-source AR glasses SDK knowledge base.**
-Covers 30+ repositories, 200+ source files, and every major consumer AR glasses platform.
+
+Covers 30+ repositories · 200+ source files · Every major consumer AR platform
+
+[![API Docs](https://img.shields.io/badge/API_Docs-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](https://vincentwi.github.io/ar-glasses-master-sdk/swagger/)
+[![Full Reference](https://img.shields.io/badge/Full_Reference-Gist_API-2188FF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/vincentwi/ar-glasses-master-sdk/blob/main/docs/FULL_API_REFERENCE.md)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?style=for-the-badge&logo=openapiinitiative&logoColor=white)](./openapi.yaml)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
+
+</div>
 
 ---
 
-## What This Is
+## What is this?
 
-A deeply researched, cross-referenced documentation repository for building software that targets AR glasses — XREAL, RayNeo, Rokid, Frame, Meta, Vuzix, Everysight, and more. Every claim is backed by actual source code analysis, not marketing docs.
+A deeply-researched, cross-referenced documentation repository for building software that targets AR glasses — **XREAL, RayNeo, Rokid, Frame, Meta, Vuzix, Everysight**, and more. Every claim is backed by actual source code analysis, not marketing material.
 
-This repo contains:
-- **66KB Master SDK Reference** — complete API surface for xg-glass-sdk, MentraOS, XRLinuxDriver
-- **123KB API Invocation Reference** (2 parts) — every callable function across all analyzed repos
-- **99KB Cross-Functionality Analysis** — 45 integration opportunities across the ecosystem
-- **75KB Jobs-to-be-Done Opportunities** — 15 validated product opportunities
-- **18 numbered deep-reads** — individual repo analyses totaling 500KB+
-- **Quick-reference cards** — VID/PID registry, protocol cheatsheet, sensor fusion guide
+The SDK provides:
+- **Unified API** — one interface to control any supported AR glasses
+- **Complete API reference** — 500+ functions across 12 domains, 27 repos
+- **OpenAPI spec** — machine-readable API definition with Swagger UI
+- **Device matrix** — hardware + software capabilities for 9 device families
+- **Fern SDK generation** — auto-generate TypeScript and Python clients
+
+---
 
 ## Quick Start
 
-| I want to...                          | Start here                                    |
-|---------------------------------------|-----------------------------------------------|
-| Understand the full API surface       | `docs/MASTER_SDK_REFERENCE.md`                |
-| Look up a specific function call      | `docs/API_INVOCATION_REFERENCE.md`            |
-| Find device VID/PID codes             | `reference/vid-pid-registry.md`               |
-| Understand transport protocols        | `reference/protocol-cheatsheet.md`            |
-| Work with IMU/sensor data             | `reference/sensor-fusion-guide.md`            |
-| See what devices can do               | `docs/CAPABILITIES_MATRIX.md`                 |
-| Find cross-device opportunities       | `docs/CROSS_FUNCTIONALITY.md`                 |
-| Deep-dive a specific technology       | `docs/deep-reads/` (numbered 01–18)           |
-| Understand repo architecture          | `ARCHITECTURE.md`                             |
+### 1. Browse the API
 
-## Repository Structure
+Open the **[Interactive API Reference](https://vincentwi.github.io/ar-glasses-master-sdk/swagger/)** — dark-themed Swagger UI with every endpoint documented.
+
+### 2. Use the SDK (Kotlin)
+
+```kotlin
+val client: GlassesClient = GlassesClientFactory.create(activity)
+client.connect()
+
+// Display text on any connected glasses
+client.display("Hello from AR Glasses SDK")
+
+// Read IMU sensor data
+client.onImuData { data ->
+    println("Quaternion: ${data.quaternion}")
+    println("Acceleration: ${data.acceleration}")
+}
+```
+
+### 3. Use the REST API
+
+```bash
+# List connected devices
+curl http://localhost:8080/devices
+
+# Display content
+curl -X POST http://localhost:8080/devices/xreal-001/display \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Hello World", "mode": "replace"}'
+
+# Stream IMU data
+curl http://localhost:8080/devices/xreal-001/sensors/imu/stream
+```
+
+### 4. Generate a typed client (Fern)
+
+```bash
+npm install -g fern-api
+fern generate --group ts-sdk
+```
+
+---
+
+## Supported Devices
+
+| Device | Transport | SDK Language | IMU Rate | Display | DoF | Camera | Standalone |
+|--------|-----------|-------------|----------|---------|-----|--------|------------|
+| **XREAL Air/One** | USB HID | C | 60–500 Hz | 1920×1080 SBS | 3DoF | ✗ | ✗ |
+| **RayNeo X3 Pro** | USB HID | C / Kotlin | ~60 Hz | 1920×1080×2 | 6DoF | ✓ 16MP | Partial |
+| **RayNeo Luma** | USB HID | C | up to 1kHz | 1920×1080 SBS | 3DoF | ✗ | ✗ |
+| **Rokid Max** | BLE→Wi-Fi | Kotlin | ~100 Hz | 3840×1200 3D | 3DoF | ✗ | ✗ |
+| **Brilliant Frame** | BLE GATT | Kotlin/Lua | Varies | 640×400 μOLED | — | ✓ Low-res | Partial |
+| **Meta Ray-Ban** | BT HFP | Kotlin | N/A | Audio-only | — | ✓ 12MP | ✓ |
+| **Vuzix Blade 2** | Android | Kotlin/Java | Varies | DLP Waveguide | — | ✓ 8MP | Partial |
+| **Everysight** | BLE | Proprietary | Varies | Waveguide | — | ✓ | Partial |
+| **Snap Spectacles 5** | Wi-Fi | TypeScript | — | Waveguide ~720p | 6DoF | ✓ | ✓ |
+
+---
+
+## Documentation
+
+| Document | Description | Size |
+|----------|-------------|------|
+| [**API Reference (Swagger UI)**](https://vincentwi.github.io/ar-glasses-master-sdk/swagger/) | Interactive API explorer | — |
+| [**OpenAPI Spec**](./openapi.yaml) | Machine-readable API definition | 15KB |
+| [**Master SDK Reference**](./docs/MASTER_SDK_REFERENCE.md) | Complete API surface documentation | 66KB |
+| [**Full API Reference**](./docs/FULL_API_REFERENCE.md) | Every callable function documented | 108KB |
+| [**API Invocation Reference**](./docs/API_INVOCATION_REFERENCE.md) | Function-level docs (Part 1) | 60KB |
+| [**API Invocation Reference Pt.2**](./docs/API_INVOCATION_REFERENCE_PART2.md) | Function-level docs (Part 2) | 63KB |
+| [**Capabilities Matrix**](./docs/CAPABILITIES_MATRIX.md) | Device feature comparison | 4KB |
+| [**Cross-Functionality**](./docs/CROSS_FUNCTIONALITY.md) | 45 integration opportunities | 99KB |
+| [**JTBD Opportunities**](./docs/JTBD_OPPORTUNITIES.md) | 15 validated product opportunities | 75KB |
+| [**Architecture**](./ARCHITECTURE.md) | System design & methodology | — |
+
+### Quick Reference Cards
+
+| Card | What's in it |
+|------|-------------|
+| [**VID/PID Registry**](./reference/vid-pid-registry.md) | USB Vendor/Product IDs and BLE identifiers for all devices |
+| [**Protocol Cheatsheet**](./reference/protocol-cheatsheet.md) | Transport protocols at a glance — USB HID, BLE GATT, Wi-Fi |
+| [**Sensor Fusion Guide**](./reference/sensor-fusion-guide.md) | IMU math, quaternions, complementary & Kalman filters |
+
+### Deep Reads (18 individual repo analyses)
+
+<details>
+<summary>Click to expand full list</summary>
+
+| # | Topic | Repos Covered |
+|---|-------|--------------|
+| 01 | [Core SDKs](./docs/deep-reads/01-core-sdks.md) | xg-glass-sdk, MentraOS, Vuzix |
+| 02 | [Everysight + CoreDevices](./docs/deep-reads/02-everysight-coredevices.md) | Everysight Raptor, CoreDevices |
+| 03 | [XR Tools](./docs/deep-reads/03-xr-tools.md) | open-wearables, xreal-webxr, XRGaming |
+| 04 | [XR Drivers](./docs/deep-reads/04-xr-drivers.md) | PhoenixTracker, XRLinuxDriver, RayDesk |
+| 05 | [StardustXR](./docs/deep-reads/05-stardustxr.md) | StardustXR Rust compositor |
+| 06 | [IMU & Sensors](./docs/deep-reads/06-imu-sensors.md) | Fusion, headset-utils, real_utilities |
+| 07 | [RayNeo + Frame](./docs/deep-reads/07-rayneo-frame.md) | RayNeo, Brilliant Frame |
+| 08 | [Monado + Specs](./docs/deep-reads/08-monado-specs.md) | Monado OpenXR, platform specs |
+| 09 | [RayNeo Docs](./docs/deep-reads/09-rayneo-docs.md) | RayNeo documentation |
+| 10 | [Geo + Maps](./docs/deep-reads/10-geo-maps.md) | Overpass, Gemini Maps |
+| 11 | [Platform Docs](./docs/deep-reads/11-platform-docs.md) | XREAL, OpenXR, SnapOS, Qualcomm |
+| 12 | [xg-glass + MentraOS](./docs/deep-reads/12-xg-glass-mentraos.md) | Deep analysis |
+| 13 | [Driver Internals](./docs/deep-reads/13-drivers-tools.md) | Driver internals + tools |
+| 14 | [StardustXR + Frame Samples](./docs/deep-reads/14-stardust-frame-samples.md) | Samples |
+| 15 | [Web Docs](./docs/deep-reads/15-web-docs.md) | Web documentation analysis |
+| 16 | [Utilities + Samples](./docs/deep-reads/16-utilities-samples.md) | Utility libraries |
+| 17 | [Hardware Platforms](./docs/deep-reads/17-xreal-rayneo-qualcomm.md) | XREAL, RayNeo, Qualcomm |
+| 18 | [Verification](./docs/deep-reads/18-repass-wave5.md) | Repass/verification wave |
+
+</details>
+
+---
+
+## API Domains
+
+The unified API covers 12 domains:
+
+| Domain | Endpoints | Description |
+|--------|-----------|-------------|
+| **Connection** | `GET /devices`, `POST /devices/{id}/connect` | Discovery, pairing, lifecycle |
+| **Display** | `POST /devices/{id}/display` | Text, images, overlays |
+| **Sensors** | `GET /devices/{id}/sensors/imu` | IMU, accelerometer, gyroscope |
+| **Camera** | `POST /devices/{id}/camera/capture` | Photo/video capture |
+| **Audio** | `POST /devices/{id}/audio/play` | Speaker playback, TTS |
+| **Spatial** | `GET /devices/{id}/spatial/pose` | 6DoF tracking, SLAM, anchors |
+| **Device** | `GET /devices/{id}/info` | Battery, firmware, capabilities |
+
+---
+
+## Project Structure
 
 ```
 ar-glasses-master-sdk/
-├── README.md                              ← You are here
-├── ARCHITECTURE.md                        ← System design & methodology
+├── openapi.yaml                    ← OpenAPI 3.1 spec
+├── README.md                       ← You are here
+├── ARCHITECTURE.md                 ← System design & methodology
+├── .github/workflows/
+│   ├── docs.yml                    ← Swagger UI → GitHub Pages
+│   └── fern.yml                    ← Fern SDK generation CI
+├── fern/
+│   ├── fern.config.json            ← Fern project config
+│   ├── generators.yml              ← TypeScript + Python SDK generators
+│   └── openapi/openapi.yaml        ← OpenAPI spec (Fern input)
 ├── docs/
-│   ├── MASTER_SDK_REFERENCE.md            ← 66KB complete API reference
-│   ├── API_INVOCATION_REFERENCE.md        ← 60KB function-level docs (Part 1)
-│   ├── API_INVOCATION_REFERENCE_PART2.md  ← 63KB function-level docs (Part 2)
-│   ├── CAPABILITIES_MATRIX.md             ← Device feature comparison
-│   ├── LINK_REGISTRY.md                   ← All analyzed repo URLs
-│   ├── CROSS_FUNCTIONALITY.md             ← 99KB cross-device opportunities
-│   ├── JTBD_OPPORTUNITIES.md              ← 75KB product opportunities
-│   ├── GREP_REPASS_COMPLETE.md            ← 29KB symbol-level grep analysis
-│   ├── MASTER_REFERENCE_SUMMARY.md        ← 7KB condensed reference
-│   └── deep-reads/                        ← 18 individual repo analyses
-│       ├── 01-core-sdks.md                   xg-glass-sdk, MentraOS, Vuzix
-│       ├── 02-everysight-coredevices.md      Everysight Raptor, CoreDevices
-│       ├── 03-xr-tools.md                    open-wearables, xreal-webxr, XRGaming
-│       ├── 04-xr-drivers.md                  PhoenixTracker, XRLinuxDriver, RayDesk
-│       ├── 05-stardustxr.md                  StardustXR Rust compositor
-│       ├── 06-imu-sensors.md                 Fusion, headset-utils, real_utilities
-│       ├── 07-rayneo-frame.md                RayNeo + Brilliant Frame
-│       ├── 08-monado-specs.md                Monado OpenXR + platform specs
-│       ├── 09-rayneo-docs.md                 RayNeo documentation
-│       ├── 10-geo-maps.md                    Overpass + Gemini Maps integration
-│       ├── 11-platform-docs.md               XREAL/OpenXR/SnapOS/Qualcomm
-│       ├── 12-xg-glass-mentraos.md           xg-glass + MentraOS deep analysis
-│       ├── 13-drivers-tools.md               Driver internals + tools
-│       ├── 14-stardust-frame-samples.md      StardustXR + Frame samples
-│       ├── 15-web-docs.md                    Web documentation analysis
-│       ├── 16-utilities-samples.md           Utility libraries + samples
-│       ├── 17-xreal-rayneo-qualcomm.md       Hardware platform analysis
-│       └── 18-repass-wave5.md                Repass/verification wave
+│   ├── swagger/index.html          ← Dark-themed Swagger UI
+│   ├── MASTER_SDK_REFERENCE.md     ← 66KB complete API reference
+│   ├── FULL_API_REFERENCE.md       ← 108KB every function documented
+│   ├── CAPABILITIES_MATRIX.md      ← Device feature comparison
+│   └── deep-reads/                 ← 18 individual repo analyses
 ├── reference/
-│   ├── vid-pid-registry.md                ← USB VID/PID + BLE identifiers
-│   ├── protocol-cheatsheet.md             ← Transport protocols at a glance
-│   └── sensor-fusion-guide.md             ← IMU math, quaternions, fusion
-├── src/
-│   └── core/                              ← Kotlin SDK core (GlassesClient)
-└── .gitignore
+│   ├── vid-pid-registry.md         ← USB VID/PID + BLE identifiers
+│   ├── protocol-cheatsheet.md      ← Transport protocols
+│   └── sensor-fusion-guide.md      ← IMU math & quaternions
+└── src/core/                       ← Kotlin SDK core
+    ├── GlassesClient.kt
+    ├── GlassesCallback.kt
+    ├── Controllers.kt
+    └── types.kt
 ```
 
-## Devices Covered
-
-| Device          | Transport    | SDK Language | IMU Rate    | Display          |
-|-----------------|-------------|--------------|-------------|------------------|
-| XREAL Air/One   | USB HID     | C            | 60–500 Hz   | 1920×1080 / SBS  |
-| RayNeo X3       | USB HID     | C / Kotlin   | ~60 Hz      | 640×480 per eye  |
-| RayNeo Luma     | USB HID     | C            | up to 1kHz  | 1920×1080 / SBS  |
-| Rokid           | BLE→Wi-Fi   | Kotlin       | ~100 Hz     | 3840×1200 3D     |
-| Frame           | BLE GATT    | Kotlin/Lua   | Varies      | Micro-display    |
-| Meta            | BT HFP      | Kotlin       | N/A         | Audio-only       |
-| Omi             | BLE GATT    | Kotlin       | N/A         | Audio-only       |
-| Vuzix           | Android     | Kotlin/Java  | Varies      | Waveguide        |
-| Everysight      | BLE         | Proprietary  | Varies      | Holographic      |
-
-## Methodology
-
-Every document was generated through direct source code reading — not documentation scraping. The process:
-
-1. **Clone** all 30+ repos in the AR glasses ecosystem
-2. **Deep-read** every significant source file (Kotlin, C, Rust, Python, Lua)
-3. **Extract** actual API signatures, data types, and protocol details
-4. **Cross-reference** capabilities across all platforms
-5. **Synthesize** into structured reference documents
-
-See `ARCHITECTURE.md` for the complete methodology and document relationships.
+---
 
 ## Key Findings
 
-- **xg-glass-sdk** provides the most complete cross-device abstraction (6 device backends)
-- **XRLinuxDriver** is the de-facto Linux standard for USB AR glasses (31 supported models)
-- **StardustXR** offers the most ambitious spatial computing compositor (full Rust, Flatbuffers IPC)
-- **MentraOS** provides the most complete glasses-native OS framework
-- **Sensor fusion** is the critical differentiator — 60Hz vs 1000Hz IMU rates matter
+| Finding | Detail |
+|---------|--------|
+| **Best cross-device abstraction** | xg-glass-sdk — 6 device backends behind one API |
+| **Linux standard** | XRLinuxDriver — 31 supported USB AR glasses models |
+| **Most ambitious compositor** | StardustXR — full Rust, Flatbuffers IPC |
+| **Most complete glasses OS** | MentraOS — full glasses-native OS framework |
+| **Critical differentiator** | Sensor fusion — 60Hz vs 1000Hz IMU rates matter |
+
+---
 
 ## Contributing
 
-This is a living reference. To add coverage for a new device or SDK:
-
-1. Clone the target repository
+1. Clone the target repository you want to document
 2. Read actual source files (not just README)
 3. Document every public API with types and signatures
 4. Add a numbered deep-read in `docs/deep-reads/`
 5. Update `docs/CAPABILITIES_MATRIX.md` and `docs/LINK_REGISTRY.md`
+6. If adding API endpoints, update `openapi.yaml`
+
+---
 
 ## License
 
-Documentation and analysis content. Original source code belongs to respective repository owners.
-See `docs/LINK_REGISTRY.md` for all analyzed repositories and their licenses.
+Documentation and analysis content © 2024–2026. Original source code belongs to respective repository owners.
+See [`docs/LINK_REGISTRY.md`](./docs/LINK_REGISTRY.md) for all analyzed repositories and their licenses.
