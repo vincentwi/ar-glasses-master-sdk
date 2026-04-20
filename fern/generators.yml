@@ -1,7 +1,6 @@
-default-group: ts-sdk
-
+default-group: local
 groups:
-  ts-sdk:
+  local:
     generators:
       - name: fernapi/fern-typescript-node-sdk
         version: 0.x.x
@@ -10,16 +9,3 @@ groups:
           path: ../sdks/typescript
         config:
           namespaceExport: ArGlassesSdk
-          allowCustomFetcher: true
-          includeUtilsOnUnionMembers: true
-
-  python-sdk:
-    generators:
-      - name: fernapi/fern-python-sdk
-        version: 0.x.x
-        output:
-          location: local-file-system
-          path: ../sdks/python
-        config:
-          client_class_name: ArGlassesClient
-          package_name: ar_glasses_sdk
