@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AR Glasses: Cross-Repo Capability Fusion</title>
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #111118;
+  --bg-card: rgba(17, 17, 28, 0.7);
+  --border: rgba(0, 255, 170, 0.15);
+  --accent: #00ffaa;
+  --accent2: #00d4ff;
+  --accent3: #7b61ff;
+  --accent4: #ff6b6b;
+  --accent5: #ffd93d;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --glass: rgba(255,255,255,0.03);
+  --glass-border: rgba(255,255,255,0.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(0,255,170,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,212,255,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(123,97,255,0.04) 0%, transparent 50%);
+  animation: heroGlow 15s ease-in-out infinite alternate;
+}
+
+@keyframes heroGlow {
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(5deg) scale(1.1); }
+}
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,170,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,170,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridScroll 20s linear infinite;
+}
+
+@keyframes gridScroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 4.5rem);
+  font-weight: 900;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.hero .subtitle {
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  color: var(--text-dim);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+  max-width: 700px;
+  margin-bottom: 2rem;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 3rem;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.hero-stat {
+  text-align: center;
+  padding: 1.5rem 2rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  min-width: 140px;
+}
+
+.hero-stat .num {
+  font-size: 2.5rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-stat .label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  z-index: 1;
+  animation: bounce 2s infinite;
+  color: var(--accent);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+/* ─── NAV ─── */
+.sticky-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.8rem 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.sticky-nav a {
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+}
+
+.sticky-nav a:hover {
+  color: var(--accent);
+  border-color: var(--border);
+  background: var(--glass);
+}
+
+/* ─── SECTIONS ─── */
+section {
+  padding: 4rem 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.section-subtitle {
+  color: var(--text-dim);
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+/* ─── FILTERS ─── */
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filter-group label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.filter-group select, .filter-group input {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  min-width: 180px;
+}
+
+.filter-group select:focus, .filter-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0,255,170,0.2);
+}
+
+/* ─── NETWORK GRAPH ─── */
+#network-container {
+  width: 100%;
+  height: 600px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─── CARD GRID ─── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.5rem;
+}
+
+.opp-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.opp-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.opp-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(0,255,170,0.1);
+}
+
+.opp-card:hover::before { opacity: 1; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.8rem;
+}
+
+.card-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: rgba(0,255,170,0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.card-phase {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.phase-1 { background: rgba(0,255,170,0.15); color: #00ffaa; }
+.phase-2 { background: rgba(0,212,255,0.15); color: #00d4ff; }
+.phase-3 { background: rgba(123,97,255,0.15); color: #7b61ff; }
+.phase-4 { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.phase-5 { background: rgba(255,217,61,0.15); color: #ffd93d; }
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  color: #fff;
+}
+
+.card-tagline {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.8rem;
+}
+
+.repo-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.difficulty-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.diff-easy { background: rgba(0,255,170,0.15); color: #00ffaa; }
+.diff-medium { background: rgba(0,212,255,0.15); color: #00d4ff; }
+.diff-hard { background: rgba(123,97,255,0.15); color: #7b61ff; }
+.diff-expert { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+.diff-moonshot { background: rgba(255,217,61,0.15); color: #ffd93d; }
+
+.card-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+  border-top: 1px solid transparent;
+}
+
+.opp-card.expanded .card-details {
+  max-height: 400px;
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+  border-top-color: var(--glass-border);
+}
+
+.card-expand-hint {
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-align: right;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+}
+
+.hunch-badge {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  font-size: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  background: rgba(255,217,61,0.15);
+  color: #ffd93d;
+  font-weight: 600;
+}
+
+/* ─── ROADMAP ─── */
+#roadmap-container {
+  width: 100%;
+  height: 500px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  overflow-x: auto;
+}
+
+/* ─── HEATMAP ─── */
+.heatmap-wrapper {
+  overflow-x: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+#heatmap-container {
+  min-width: 800px;
+}
+
+.heatmap-table {
+  border-collapse: collapse;
+  font-size: 0.6rem;
+  width: 100%;
+}
+
+.heatmap-table th {
+  padding: 0.3rem;
+  color: var(--accent);
+  font-weight: 500;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  height: 120px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.heatmap-table td {
+  width: 28px;
+  height: 28px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 3px;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.heatmap-table td:hover {
+  transform: scale(1.5);
+  z-index: 10;
+  box-shadow: 0 0 15px rgba(0,255,170,0.3);
+}
+
+.heatmap-table .row-label {
+  color: var(--accent);
+  font-weight: 500;
+  text-align: right;
+  padding-right: 0.5rem;
+  width: auto;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  writing-mode: horizontal-tb;
+  transform: none;
+  height: auto;
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.heatmap-legend-box {
+  width: 16px; height: 16px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ─── PHASE TIMELINE ─── */
+.phase-timeline {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+}
+
+.phase-card {
+  min-width: 280px;
+  flex-shrink: 0;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.phase-card::after {
+  content: '→';
+  position: absolute;
+  right: -1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+.phase-card:last-child::after { display: none; }
+
+.phase-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.phase-card .phase-time {
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 0.8rem;
+}
+
+.phase-card .phase-items {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+
+/* ─── TOOLTIP ─── */
+.tooltip {
+  position: fixed;
+  background: rgba(10,10,15,0.95);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 1000;
+  max-width: 250px;
+  display: none;
+  backdrop-filter: blur(10px);
+}
+
+/* ─── COUNTER ANIMATION ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-stats { gap: 1rem; }
+  section { padding: 2rem 1rem; }
+  .filters { flex-direction: column; }
+  .heatmap-table th { height: 80px; font-size: 0.5rem; }
+}
+
+/* Particle canvas */
+#particles {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 1;
+}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="content-wrapper">
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="top">
+  <div class="hero-grid"></div>
+  <h1>AR Glasses: Cross-Repo<br>Capability Fusion</h1>
+  <p class="subtitle">40+ breakthrough opportunities discovered across 30 repositories — a unified vision for the future of augmented reality</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num" data-count="40">0</div><div class="label">Opportunities</div></div>
+    <div class="hero-stat"><div class="num" data-count="30">0</div><div class="label">Repositories</div></div>
+    <div class="hero-stat"><div class="num" data-count="5">0</div><div class="label">Phases</div></div>
+    <div class="hero-stat"><div class="num" data-count="120">0</div><div class="label">Cross-Links</div></div>
+  </div>
+  <div class="scroll-hint" onclick="document.getElementById('network').scrollIntoView({behavior:'smooth'})">▼</div>
+</section>
+
+<!-- ═══ NAV ═══ -->
+<nav class="sticky-nav">
+  <a href="#network">🕸 Network Graph</a>
+  <a href="#opportunities">💡 Opportunities</a>
+  <a href="#roadmap">📅 Roadmap</a>
+  <a href="#heatmap">🔥 Heatmap</a>
+  <a href="#phases">🚀 Phases</a>
+</nav>
+
+<!-- ═══ NETWORK GRAPH ═══ -->
+<section id="network">
+  <h2 class="section-title">Repository Network Graph</h2>
+  <p class="section-subtitle">Repos as nodes, shared opportunities as edges. Hover to explore connections.</p>
+  <div id="network-container"></div>
+</section>
+
+<!-- ═══ FILTERS + OPPORTUNITIES ═══ -->
+<section id="opportunities">
+  <h2 class="section-title">Cross-Repo Opportunities</h2>
+  <p class="section-subtitle">Click any card to expand technical details</p>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Difficulty</label>
+      <select id="filter-difficulty">
+        <option value="all">All Difficulties</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+        <option value="Expert">Expert</option>
+        <option value="Moonshot">Moonshot</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Phase / Timeline</label>
+      <select id="filter-phase">
+        <option value="all">All Phases</option>
+        <option value="1">Phase 1 (1-4 weeks)</option>
+        <option value="2">Phase 2 (1-3 months)</option>
+        <option value="3">Phase 3 (3-6 months)</option>
+        <option value="4">Phase 4 (6-12 months)</option>
+        <option value="5">Phase 5 (1-2 years)</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Repo Involvement</label>
+      <select id="filter-repo">
+        <option value="all">All Repos</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="filter-search" placeholder="Search opportunities...">
+    </div>
+    <div class="filter-group">
+      <label>Source</label>
+      <select id="filter-source">
+        <option value="all">All Sources</option>
+        <option value="hunch">Vincent's Hunches</option>
+        <option value="novel">Novel Ideas</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card-grid" id="card-grid"></div>
+</section>
+
+<!-- ═══ ROADMAP ═══ -->
+<section id="roadmap">
+  <h2 class="section-title">Implementation Roadmap</h2>
+  <p class="section-subtitle">Gantt-style timeline across 5 phases</p>
+  <div id="roadmap-container">
+    <canvas id="roadmap-chart"></canvas>
+  </div>
+</section>
+
+<!-- ═══ HEATMAP ═══ -->
+<section id="heatmap">
+  <h2 class="section-title">Repo Overlap Matrix</h2>
+  <p class="section-subtitle">Heatmap showing which repositories share functionality across opportunities</p>
+  <div class="heatmap-wrapper">
+    <div id="heatmap-container"></div>
+    <div class="heatmap-legend">
+      <span>Fewer shared opps</span>
+      <div class="heatmap-legend-box" style="background:#0a1a12"></div>
+      <div class="heatmap-legend-box" style="background:#0d3320"></div>
+      <div class="heatmap-legend-box" style="background:#1a6640"></div>
+      <div class="heatmap-legend-box" style="background:#33cc80"></div>
+      <div class="heatmap-legend-box" style="background:#00ffaa"></div>
+      <span>More shared opps</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PHASES ═══ -->
+<section id="phases">
+  <h2 class="section-title">Implementation Phases</h2>
+  <p class="section-subtitle">Progressive rollout from quick wins to moonshots</p>
+  <div class="phase-timeline" id="phase-timeline"></div>
+</section>
+
+</div><!-- .content-wrapper -->
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+
+const REPOS = [
+  { id: 'AugmentOS', color: '#00ffaa', category: 'Platform' },
+  { id: 'AugmentOS-Cloud', color: '#00e69a', category: 'Platform' },
+  { id: 'even-realities-g1', color: '#00d4ff', category: 'Hardware' },
+  { id: 'Frame-SDK', color: '#00bfe6', category: 'Hardware' },
+  { id: 'Mach1-SDK', color: '#7b61ff', category: 'Audio' },
+  { id: 'StardustXR', color: '#9b59b6', category: 'XR Runtime' },
+  { id: 'OpenIris', color: '#e74c3c', category: 'Eye Tracking' },
+  { id: 'LibreGlass', color: '#e67e22', category: 'Hardware' },
+  { id: 'RayNeo-SDK', color: '#f1c40f', category: 'Hardware' },
+  { id: 'Emteq-OCO', color: '#1abc9c', category: 'Biometric' },
+  { id: 'XREAL-SDK', color: '#3498db', category: 'Hardware' },
+  { id: 'Nreal-SDK', color: '#2980b9', category: 'Hardware' },
+  { id: 'Project-North-Star', color: '#ff6b6b', category: 'Hardware' },
+  { id: 'OpenHMD', color: '#fd79a8', category: 'Driver' },
+  { id: 'Monado', color: '#a29bfe', category: 'XR Runtime' },
+  { id: 'WaveSDK', color: '#74b9ff', category: 'Platform' },
+  { id: 'Snap-Spectacles', color: '#ffeaa7', category: 'Hardware' },
+  { id: 'Meta-Aria', color: '#55efc4', category: 'Research' },
+  { id: 'OpenCV-AR', color: '#81ecec', category: 'Vision' },
+  { id: 'ARCore-SDK', color: '#fab1a0', category: 'Platform' },
+  { id: 'WebXR-Polyfill', color: '#dfe6e9', category: 'Web' },
+  { id: 'OverpassTurbo', color: '#00cec9', category: 'Geo' },
+  { id: 'SAM3-Segment', color: '#6c5ce7', category: 'AI/ML' },
+  { id: 'Whisper-ASR', color: '#fd79a8', category: 'AI/ML' },
+  { id: 'Gemini-API', color: '#00b894', category: 'AI/ML' },
+  { id: 'BLE-Mesh-SDK', color: '#e17055', category: 'Connectivity' },
+  { id: 'RayDesk', color: '#0984e3', category: 'Desktop' },
+  { id: 'IMU-Fusion', color: '#fdcb6e', category: 'Sensor' },
+  { id: 'NeRF-Studio', color: '#e84393', category: 'AI/ML' },
+  { id: 'PPG-Sensor-SDK', color: '#d63031', category: 'Biometric' }
+];
+
+const REPO_COLORS = {};
+REPOS.forEach(r => REPO_COLORS[r.id] = r.color);
+
+const OPPORTUNITIES = [
+  {
+    id: 1, name: 'Ghost Runner', tagline: 'See yourself running ahead — a holographic pace ghost in your AR view',
+    repos: ['IMU-Fusion', 'OpenCV-AR', 'AugmentOS', 'even-realities-g1'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Combines IMU sensor fusion for real-time body tracking with camera-based SLAM positioning. Renders a semi-transparent 3D avatar at your previous best pace using the glasses display pipeline. Requires temporal alignment of GPS + IMU data with AR coordinate space.'
+  },
+  {
+    id: 2, name: 'Novelty Score', tagline: 'Embed every visual scene and compare against global user database for uniqueness',
+    repos: ['OpenCV-AR', 'Gemini-API', 'AugmentOS-Cloud', 'Meta-Aria'],
+    difficulty: 'Hard', phase: 3, source: 'hunch',
+    details: 'Uses vision transformers to create scene embeddings from glasses camera feed. Cloud backend maintains a vector database of all user scenes. Real-time cosine similarity scoring surfaces how unique your current view is vs. millions of captures.'
+  },
+  {
+    id: 3, name: 'GeoGuessr AR', tagline: 'Real-world location guessing game using Overpass Turbo + Gemini scene understanding',
+    repos: ['OverpassTurbo', 'Gemini-API', 'OpenCV-AR', 'AugmentOS'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Queries Overpass Turbo API for local geographic features, combines with Gemini multimodal analysis of visible landmarks, architecture, and signage. AR overlay shows game UI with scoring, hints, and multiplayer leaderboards.'
+  },
+  {
+    id: 4, name: 'SLAM Street View', tagline: 'Navigate cities via NeRF reconstruction streamed to glasses in real-time',
+    repos: ['NeRF-Studio', 'OpenCV-AR', 'AugmentOS', 'XREAL-SDK'],
+    difficulty: 'Expert', phase: 4, source: 'hunch',
+    details: 'Pre-built NeRF city models served from cloud. Glasses camera provides pose estimation for viewpoint synthesis. Real-time neural radiance field rendering at 30fps requires edge compute optimization. Ghost-walk through historical versions of streets.'
+  },
+  {
+    id: 5, name: 'AR Art Tracer', tagline: 'Overlay any artwork, blueprint or design as a trace guide in your physical workspace',
+    repos: ['AugmentOS', 'Frame-SDK', 'OpenCV-AR', 'SAM3-Segment'],
+    difficulty: 'Easy', phase: 1, source: 'hunch',
+    details: 'Load any image as a semi-transparent AR overlay. SAM3 segments the image into layers for progressive reveal. Camera tracks your paper/canvas surface for stable registration. Adjust opacity, scale, and position with gesture controls.'
+  },
+  {
+    id: 6, name: 'Cyborg Vision Stack', tagline: 'UV, IR, nightvision, and digital zoom overlays switchable in real-time',
+    repos: ['OpenCV-AR', 'AugmentOS', 'LibreGlass', 'even-realities-g1'],
+    difficulty: 'Hard', phase: 3, source: 'hunch',
+    details: 'Requires auxiliary sensor modules (UV/IR) attached to glasses frame. OpenCV processes multi-spectral feeds into false-color overlays. Digital zoom uses super-resolution ML models. Vision modes toggled via gesture or voice command through AugmentOS.'
+  },
+  {
+    id: 7, name: 'Swarm Mesh', tagline: 'BLE mesh network enabling glasses-to-glasses communication without internet',
+    repos: ['BLE-Mesh-SDK', 'AugmentOS', 'even-realities-g1', 'Frame-SDK'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'BLE 5.0 mesh networking creates ad-hoc networks between nearby glasses wearers. Supports text, location pings, and small data packets. Enables offline communication at festivals, events, and emergencies. Crowd-sourced mapping of connectivity dead zones. Each glasses device becomes a mesh relay node.'
+  },
+  {
+    id: 8, name: 'Personal Wikipedia', tagline: 'Always-on audio transcription that builds your personal knowledge wiki automatically',
+    repos: ['Whisper-ASR', 'AugmentOS-Cloud', 'Gemini-API', 'AugmentOS'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Whisper runs on-device for continuous speech-to-text. Gemini extracts entities, facts, and relationships. Cloud backend structures knowledge into a personal wiki graph. AR overlay surfaces relevant wiki entries based on conversation context.'
+  },
+  {
+    id: 9, name: 'Brain Offload Assistant', tagline: 'Ambient AI that quietly handles reminders, lookups, and minor tasks in the background',
+    repos: ['AugmentOS', 'Gemini-API', 'Whisper-ASR', 'AugmentOS-Cloud'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Listens passively for actionable items in conversation. Automatically creates reminders, looks up facts, sends messages. Minimal AR interruption — uses peripheral vision notifications. Learns your patterns over time for proactive assistance.'
+  },
+  {
+    id: 10, name: 'Eye Tracking Data Market', tagline: 'PPG + eye tracking data creates behavioral analytics marketplace',
+    repos: ['OpenIris', 'PPG-Sensor-SDK', 'AugmentOS-Cloud', 'Emteq-OCO'],
+    difficulty: 'Hard', phase: 3, source: 'hunch',
+    details: 'OpenIris provides gaze tracking, PPG sensors measure heart rate variability. Combined data reveals attention patterns, stress levels, and engagement. Privacy-preserving aggregation enables opt-in behavioral analytics marketplace for UX research.'
+  },
+  {
+    id: 11, name: 'Mental Gym', tagline: 'Cognitive exercises overlaid on the real world — brain training in AR',
+    repos: ['AugmentOS', 'Frame-SDK', 'OpenIris', 'even-realities-g1'],
+    difficulty: 'Easy', phase: 1, source: 'hunch',
+    details: 'AR overlays present memory challenges, pattern recognition, and spatial reasoning puzzles anchored to real-world objects. Eye tracking measures cognitive load and performance. Adaptive difficulty based on biometric feedback. Daily brain fitness scores.'
+  },
+  {
+    id: 12, name: 'Context Engine', tagline: 'Information structure as a competitive moat — always-relevant contextual data',
+    repos: ['AugmentOS-Cloud', 'Gemini-API', 'OpenCV-AR', 'Whisper-ASR'],
+    difficulty: 'Expert', phase: 4, source: 'hunch',
+    details: 'Builds a unified context graph from visual, audio, and location data. ML models predict information needs before you ask. The accumulated context becomes an irreplaceable personal knowledge infrastructure. APIs allow third-party apps to leverage your context.'
+  },
+  {
+    id: 13, name: 'Tony Stark Mode', tagline: 'Unified gesture + voice + spatial computing — the full Iron Man HUD experience',
+    repos: ['AugmentOS', 'StardustXR', 'Mach1-SDK', 'IMU-Fusion', 'OpenCV-AR'],
+    difficulty: 'Expert', phase: 4, source: 'hunch',
+    details: 'Combines hand tracking, voice commands, spatial audio, and 6DOF head tracking into a unified interaction model. Floating UI panels, grab-and-throw gestures, voice-activated holographic displays. Requires tight integration of all sensor modalities.'
+  },
+  {
+    id: 14, name: 'Racing Ghost Overlay', tagline: '3D avatar of your past performance for any physical activity',
+    repos: ['IMU-Fusion', 'AugmentOS', 'OpenCV-AR', 'NeRF-Studio'],
+    difficulty: 'Hard', phase: 3, source: 'hunch',
+    details: 'Records full body motion via IMU + camera pose estimation. Replays as a volumetric ghost overlay during next attempt. Supports running, cycling, swimming, climbing. NeRF-based reconstruction for photorealistic ghost rendering.'
+  },
+  {
+    id: 15, name: 'Publisher LLM Feed', tagline: 'Citizen-app model for AR — local news and events as spatial content',
+    repos: ['AugmentOS', 'AugmentOS-Cloud', 'Gemini-API', 'OverpassTurbo'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Location-aware content feed powered by LLM curation. Local publishers push AR content anchored to specific places. Walking past a restaurant shows reviews; a building shows its history. Democratizes AR content creation for local journalism.'
+  },
+  {
+    id: 16, name: 'Hyper-Real Social', tagline: 'AR accelerates authentic behavior — see real social signals amplified',
+    repos: ['Emteq-OCO', 'OpenIris', 'AugmentOS', 'PPG-Sensor-SDK'],
+    difficulty: 'Hard', phase: 3, source: 'hunch',
+    details: 'Facial expression analysis via Emteq, gaze analysis via OpenIris, stress detection via PPG. Subtle AR indicators show genuine engagement, discomfort, or interest during conversations. Designed to enhance empathy, not deceive.'
+  },
+  {
+    id: 17, name: 'Post-Camera Films', tagline: 'AI-native art created through glasses — cinema beyond the lens',
+    repos: ['NeRF-Studio', 'OpenCV-AR', 'Gemini-API', 'Mach1-SDK'],
+    difficulty: 'Expert', phase: 4, source: 'hunch',
+    details: 'Glasses camera captures scenes, NeRF reconstructs 3D environment, Gemini generates artistic transformations. Spatial audio via Mach1 creates immersive soundscapes. Result: films that could never be captured by a traditional camera.'
+  },
+  {
+    id: 18, name: 'Agentic Representatives', tagline: 'Brands as functional agents in AR — not websites, not apps, living entities',
+    repos: ['AugmentOS', 'Gemini-API', 'AugmentOS-Cloud', 'StardustXR'],
+    difficulty: 'Expert', phase: 4, source: 'hunch',
+    details: 'Each brand has an AI agent that appears in AR when relevant. Walk past a store — its agent offers personalized deals. Agents negotiate with each other on your behalf. StardustXR provides the 3D avatar rendering. New commerce paradigm.'
+  },
+  {
+    id: 19, name: 'Cross-Platform Music', tagline: '"Play Gaga" — works regardless of Spotify, Apple Music, or YouTube',
+    repos: ['AugmentOS', 'Whisper-ASR', 'Mach1-SDK', 'AugmentOS-Cloud'],
+    difficulty: 'Easy', phase: 1, source: 'hunch',
+    details: 'Voice command captured by Whisper, intent parsing routes to available music service. Mach1 spatial audio provides immersive listening. AugmentOS handles service abstraction layer. Simple but high-impact quality-of-life feature.'
+  },
+  {
+    id: 20, name: 'Live Translation HUD', tagline: 'Real-time language translation overlay — hear in one language, read in another',
+    repos: ['Whisper-ASR', 'AugmentOS', 'Gemini-API', 'even-realities-g1'],
+    difficulty: 'Medium', phase: 2, source: 'hunch',
+    details: 'Whisper provides real-time speech recognition in source language. Gemini handles translation with context awareness. Text overlay appears in AR near the speaker. Supports 100+ languages. Low-latency pipeline critical for natural conversation flow.'
+  },
+  {
+    id: 21, name: 'Spatial Clipboard', tagline: 'Copy real objects, paste them in AR — SAM3 segmentation meets spatial computing',
+    repos: ['SAM3-Segment', 'AugmentOS', 'OpenCV-AR', 'StardustXR'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Point at any real object, SAM3 segments it from background. Object becomes a manipulable AR entity — resize, recolor, duplicate. Paste into AR scenes or share with others. Foundation for AR-native content creation.'
+  },
+  {
+    id: 22, name: 'Crowd Sonar', tagline: 'Sense crowd density and movement patterns via mesh IMU data from nearby wearers',
+    repos: ['BLE-Mesh-SDK', 'IMU-Fusion', 'AugmentOS', 'AugmentOS-Cloud'],
+    difficulty: 'Hard', phase: 3, source: 'novel',
+    details: 'Aggregates anonymized IMU data from mesh-connected glasses wearers. ML models infer crowd density, flow direction, and congestion points. AR overlay shows heat map of crowd movement. Useful for events, transit, emergency evacuation.'
+  },
+  {
+    id: 23, name: 'Memory Palace Builder', tagline: 'Spatial note-taking anchored to physical locations — build a mind palace in AR',
+    repos: ['AugmentOS', 'OpenCV-AR', 'ARCore-SDK', 'AugmentOS-Cloud'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Leave virtual sticky notes, diagrams, and 3D objects at specific real-world coordinates. SLAM tracking ensures persistent placement. Walk through your Memory Palace to review notes. Proven mnemonic technique enhanced by spatial computing.'
+  },
+  {
+    id: 24, name: 'Social Radar', tagline: 'Detect and display info about nearby glasses wearers — opt-in social proximity',
+    repos: ['BLE-Mesh-SDK', 'AugmentOS', 'AugmentOS-Cloud', 'even-realities-g1'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'BLE mesh broadcasts opt-in profile cards. Nearby wearers appear as AR indicators with shared interests, mutual connections. Privacy-first: users control what they share. Transforms strangers in a coffee shop into potential connections.'
+  },
+  {
+    id: 25, name: 'AR Debugging', tagline: 'See code, logs, and system metrics floating in 3D space around your workstation',
+    repos: ['StardustXR', 'RayDesk', 'AugmentOS', 'Monado'],
+    difficulty: 'Hard', phase: 3, source: 'novel',
+    details: 'StardustXR + RayDesk create virtual monitors in AR space. Code diffs float beside physical monitors. Log streams cascade in peripheral vision. System metrics rendered as 3D charts. Developers work in an infinite-monitor setup without physical screens.'
+  },
+  {
+    id: 26, name: 'Collaborative Whiteboard', tagline: 'Multiple glasses users share a persistent AR canvas for real-time collaboration',
+    repos: ['AugmentOS', 'BLE-Mesh-SDK', 'StardustXR', 'AugmentOS-Cloud'],
+    difficulty: 'Hard', phase: 3, source: 'novel',
+    details: 'Shared AR canvas synced via cloud or local mesh. Multiple users draw, place objects, and annotate in the same virtual space. Spatial audio (Mach1) provides directional voice chat. Transforms any room into a collaborative workspace.'
+  },
+  {
+    id: 27, name: 'Emotion Mirror', tagline: 'Real-time facial expression feedback — see how your face reads to others',
+    repos: ['Emteq-OCO', 'AugmentOS', 'OpenCV-AR', 'Frame-SDK'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Emteq OCO sensors detect facial muscle movements. AI classifies expressions and social signals. AR overlay shows your current emotional read — subtle icon or graph. Powerful tool for public speaking practice, social skills development, and self-awareness.'
+  },
+  {
+    id: 28, name: 'Sound Locator', tagline: 'Visualize audio sources in 3D space — see where sounds come from',
+    repos: ['Mach1-SDK', 'AugmentOS', 'OpenCV-AR', 'IMU-Fusion'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Microphone array on glasses provides spatial audio capture. Mach1 SDK processes into 3D sound field. AR overlay renders visual indicators at sound source locations. Useful for hearing-impaired users, security, wildlife observation, and audio engineering.'
+  },
+  {
+    id: 29, name: 'Body Double', tagline: 'Remote presence via glasses camera — your 3D avatar attends meetings for you',
+    repos: ['NeRF-Studio', 'AugmentOS', 'AugmentOS-Cloud', 'Mach1-SDK'],
+    difficulty: 'Expert', phase: 4, source: 'novel',
+    details: 'Glasses camera captures you for real-time NeRF reconstruction. Your photorealistic avatar is transmitted to other AR glasses wearers. Spatial audio preserves natural voice positioning. True telepresence without VR headsets.'
+  },
+  {
+    id: 30, name: 'Peripheral Vision Alerts', tagline: 'Use the full FOV of AR glasses for ambient, non-intrusive notifications',
+    repos: ['AugmentOS', 'even-realities-g1', 'XREAL-SDK', 'OpenIris'],
+    difficulty: 'Easy', phase: 1, source: 'novel',
+    details: 'Maps notification urgency to visual position — critical alerts center, ambient info at edges. Eye tracking confirms when notifications are noticed. Color-coded peripheral indicators for messages, navigation, health alerts. Reduces notification fatigue dramatically.'
+  },
+  {
+    id: 31, name: 'Walk Score Live', tagline: 'Real-time neighborhood quality overlay — walkability, safety, amenities at a glance',
+    repos: ['OverpassTurbo', 'AugmentOS', 'OpenCV-AR', 'Gemini-API'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Overpass Turbo provides POI density, transit access, green space data. Camera analysis adds real-time factors like lighting, sidewalk quality, foot traffic. AR overlay shows neighborhood scores as you walk. Invaluable for apartment hunting, urban exploration.'
+  },
+  {
+    id: 32, name: 'AR Cooking Assistant', tagline: 'Ingredient recognition + recipe overlay — hands-free cooking guidance',
+    repos: ['OpenCV-AR', 'AugmentOS', 'SAM3-Segment', 'Gemini-API'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Camera identifies ingredients on counter via SAM3 segmentation + Gemini classification. Suggests recipes from available ingredients. Step-by-step AR overlay with timers, measurements, technique videos. Voice-controlled for hands-free operation.'
+  },
+  {
+    id: 33, name: 'Fitness Form Coach', tagline: 'IMU + camera pose estimation for real-time exercise form correction',
+    repos: ['IMU-Fusion', 'OpenCV-AR', 'AugmentOS', 'PPG-Sensor-SDK'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'IMU tracks body movement, camera-based pose estimation maps full skeleton. ML model compares against ideal form. Real-time AR overlay shows correction arrows and angles. PPG monitors heart rate for intensity management. Personal trainer in your glasses.'
+  },
+  {
+    id: 34, name: 'Navigation Breadcrumbs', tagline: 'Leave AR markers in physical space — find your way back from anywhere',
+    repos: ['AugmentOS', 'ARCore-SDK', 'OpenCV-AR', 'even-realities-g1'],
+    difficulty: 'Easy', phase: 1, source: 'novel',
+    details: 'Drop virtual breadcrumb markers as you walk. SLAM tracking ensures markers persist at exact locations. Follow the trail back to your starting point. Share trails with others. Perfect for hiking, large venues, parking garages. Simple SLAM + persistence.'
+  },
+  {
+    id: 35, name: 'Price Scanner', tagline: 'Point at any product — see price comparisons from every major retailer instantly',
+    repos: ['OpenCV-AR', 'Gemini-API', 'AugmentOS', 'AugmentOS-Cloud'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Camera captures product, Gemini identifies it via visual recognition + OCR of labels. Cloud backend queries price comparison APIs. AR overlay shows prices from Amazon, Walmart, Target, etc. with one-click purchase. Transforms physical shopping.'
+  },
+  {
+    id: 36, name: 'Social Cue Coach', tagline: 'Real-time conversation coaching for neurodivergent users — social signals explained',
+    repos: ['Emteq-OCO', 'Whisper-ASR', 'Gemini-API', 'AugmentOS'],
+    difficulty: 'Hard', phase: 3, source: 'novel',
+    details: 'Emteq reads your facial expressions, Whisper captures conversation, Gemini analyzes social dynamics. Subtle AR prompts suggest when to nod, make eye contact, or pause. Designed with neurodivergent community input. Life-changing accessibility tool.'
+  },
+  {
+    id: 37, name: 'Dream Recorder Companion', tagline: 'Capture hypnagogic imagery descriptions — journal dreams before they fade',
+    repos: ['Whisper-ASR', 'AugmentOS', 'Gemini-API', 'AugmentOS-Cloud'],
+    difficulty: 'Easy', phase: 1, source: 'novel',
+    details: 'Voice-activated immediately upon waking. Whisper captures your dream narration. Gemini structures the narrative, identifies recurring themes, and generates dream visualizations. Cloud storage builds a searchable dream journal over time.'
+  },
+  {
+    id: 38, name: 'Time-Lapse Vision', tagline: 'Overlay historical views of your current location — see how places change over time',
+    repos: ['OpenCV-AR', 'AugmentOS-Cloud', 'OverpassTurbo', 'AugmentOS'],
+    difficulty: 'Hard', phase: 3, source: 'novel',
+    details: 'Cloud database of historical street-view imagery and maps. Camera pose estimation aligns current view with historical captures. AR overlay blends past and present. Slide through decades of change. Powerful for urban planning, real estate, tourism.'
+  },
+  {
+    id: 39, name: 'Invisible Ink', tagline: 'AR messages visible only to specific glasses wearers — encrypted spatial messaging',
+    repos: ['AugmentOS', 'BLE-Mesh-SDK', 'AugmentOS-Cloud', 'ARCore-SDK'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'Leave encrypted messages at physical locations. Only designated recipients with the right cryptographic keys can see them. BLE mesh for local discovery, cloud for persistent storage. Digital graffiti, surprise notes, scavenger hunts, secure dead drops.'
+  },
+  {
+    id: 40, name: 'Biometric DJ', tagline: 'Music that adapts to your heart rate, movement, and emotional state in real-time',
+    repos: ['PPG-Sensor-SDK', 'IMU-Fusion', 'Mach1-SDK', 'AugmentOS'],
+    difficulty: 'Medium', phase: 2, source: 'novel',
+    details: 'PPG measures heart rate and HRV, IMU detects movement patterns and intensity. ML model maps biometric state to music parameters — tempo, energy, mood. Mach1 spatial audio delivers adaptive soundtrack. Your body becomes the DJ controller.'
+  }
+];
+
+const ALL_REPOS = [...new Set(OPPORTUNITIES.flatMap(o => o.repos))].sort();
+
+// ═══════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function initParticles() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  particles = [];
+  const count = Math.min(80, Math.floor(window.innerWidth / 20));
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 0.5,
+      color: ['#00ffaa', '#00d4ff', '#7b61ff'][Math.floor(Math.random() * 3)]
+    });
+  }
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach((p, i) => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = 0.5;
+    ctx.fill();
+
+    // Draw connections
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = p.x - particles[j].x;
+      const dy = p.y - particles[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 150) {
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = p.color;
+        ctx.globalAlpha = 0.05 * (1 - dist/150);
+        ctx.stroke();
+      }
+    }
+  });
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawParticles);
+}
+
+window.addEventListener('resize', initParticles);
+initParticles();
+drawParticles();
+
+// ═══════════════════════════════════════════════════
+// COUNTER ANIMATION
+// ═══════════════════════════════════════════════════
+document.querySelectorAll('.hero-stat .num').forEach(el => {
+  const target = parseInt(el.dataset.count);
+  let current = 0;
+  const step = Math.max(1, Math.floor(target / 40));
+  const interval = setInterval(() => {
+    current += step;
+    if (current >= target) { current = target; clearInterval(interval); }
+    el.textContent = current;
+  }, 40);
+});
+
+// ═══════════════════════════════════════════════════
+// NETWORK GRAPH (vis.js)
+// ═══════════════════════════════════════════════════
+function buildNetwork() {
+  const nodes = REPOS.map(r => ({
+    id: r.id,
+    label: r.id,
+    color: { background: r.color + '33', border: r.color, highlight: { background: r.color + '66', border: r.color } },
+    font: { color: '#ccc', size: 11, face: 'JetBrains Mono' },
+    borderWidth: 2,
+    shape: 'dot',
+    size: 15 + OPPORTUNITIES.filter(o => o.repos.includes(r.id)).length * 3
+  }));
+
+  // Build edges from shared opportunities
+  const edgeMap = {};
+  OPPORTUNITIES.forEach(o => {
+    for (let i = 0; i < o.repos.length; i++) {
+      for (let j = i + 1; j < o.repos.length; j++) {
+        const key = [o.repos[i], o.repos[j]].sort().join('|');
+        if (!edgeMap[key]) edgeMap[key] = { from: o.repos[i], to: o.repos[j], count: 0, opps: [] };
+        edgeMap[key].count++;
+        edgeMap[key].opps.push(o.name);
+      }
+    }
+  });
+
+  const edges = Object.values(edgeMap).map(e => ({
+    from: e.from, to: e.to,
+    value: e.count,
+    title: `${e.count} shared: ${e.opps.join(', ')}`,
+    color: { color: 'rgba(0,255,170,0.15)', highlight: 'rgba(0,255,170,0.5)' },
+    smooth: { type: 'continuous' }
+  }));
+
+  const container = document.getElementById('network-container');
+  const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+  const options = {
+    physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -40, springLength: 150 } },
+    interaction: { hover: true, tooltipDelay: 100 },
+    layout: { improvedLayout: true },
+    edges: { scaling: { min: 1, max: 6 } }
+  };
+  new vis.Network(container, data, options);
+}
+
+buildNetwork();
+
+// ═══════════════════════════════════════════════════
+// POPULATE REPO FILTER
+// ═══════════════════════════════════════════════════
+const repoSelect = document.getElementById('filter-repo');
+ALL_REPOS.forEach(r => {
+  const opt = document.createElement('option');
+  opt.value = r; opt.textContent = r;
+  repoSelect.appendChild(opt);
+});
+
+// ═══════════════════════════════════════════════════
+// CARD GRID
+// ═══════════════════════════════════════════════════
+function renderCards() {
+  const grid = document.getElementById('card-grid');
+  const diffFilter = document.getElementById('filter-difficulty').value;
+  const phaseFilter = document.getElementById('filter-phase').value;
+  const repoFilter = document.getElementById('filter-repo').value;
+  const searchFilter = document.getElementById('filter-search').value.toLowerCase();
+  const sourceFilter = document.getElementById('filter-source').value;
+
+  grid.innerHTML = '';
+
+  const filtered = OPPORTUNITIES.filter(o => {
+    if (diffFilter !== 'all' && o.difficulty !== diffFilter) return false;
+    if (phaseFilter !== 'all' && o.phase !== parseInt(phaseFilter)) return false;
+    if (repoFilter !== 'all' && !o.repos.includes(repoFilter)) return false;
+    if (searchFilter && !o.name.toLowerCase().includes(searchFilter) && !o.tagline.toLowerCase().includes(searchFilter)) return false;
+    if (sourceFilter !== 'all' && o.source !== sourceFilter) return false;
+    return true;
+  });
+
+  filtered.forEach((o, idx) => {
+    const diffClass = {'Easy':'diff-easy','Medium':'diff-medium','Hard':'diff-hard','Expert':'diff-expert','Moonshot':'diff-moonshot'}[o.difficulty];
+    const phaseNames = {1:'Phase 1 · 1-4 wks',2:'Phase 2 · 1-3 mo',3:'Phase 3 · 3-6 mo',4:'Phase 4 · 6-12 mo',5:'Phase 5 · 1-2 yr'};
+
+    const card = document.createElement('div');
+    card.className = 'opp-card animate-in';
+    card.style.animationDelay = `${idx * 0.05}s`;
+    card.onclick = () => card.classList.toggle('expanded');
+
+    const badges = o.repos.map(r => {
+      const color = REPO_COLORS[r] || '#888';
+      return `<span class="repo-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${r}</span>`;
+    }).join('');
+
+    card.innerHTML = `
+      ${o.source === 'hunch' ? '<span class="hunch-badge">🔮 VINCENT\'S HUNCH</span>' : ''}
+      <div class="card-header">
+        <span class="card-number">#${String(o.id).padStart(2,'0')}</span>
+        <span class="card-phase phase-${o.phase}">${phaseNames[o.phase]}</span>
+      </div>
+      <div class="card-title">${o.name}</div>
+      <div class="card-tagline">${o.tagline}</div>
+      <div class="card-badges">${badges}</div>
+      <span class="difficulty-badge ${diffClass}">${o.difficulty}</span>
+      <div class="card-details">
+        <strong style="color:#fff">Technical Details:</strong><br>
+        ${o.details}
+      </div>
+      <div class="card-expand-hint">▼ click to expand</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-dim);grid-column:1/-1;">No opportunities match your filters</div>';
+  }
+}
+
+['filter-difficulty','filter-phase','filter-repo','filter-source'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderCards);
+});
+document.getElementById('filter-search').addEventListener('input', renderCards);
+renderCards();
+
+// ═══════════════════════════════════════════════════
+// ROADMAP GANTT CHART
+// ═══════════════════════════════════════════════════
+function buildRoadmap() {
+  const ctx = document.getElementById('roadmap-chart').getContext('2d');
+
+  const phaseColors = ['#00ffaa', '#00d4ff', '#7b61ff', '#ff6b6b', '#ffd93d'];
+  const phaseLabels = ['Phase 1: Quick Wins (1-4 wks)', 'Phase 2: Integration (1-3 mo)', 'Phase 3: Development (3-6 mo)', 'Phase 4: R&D (6-12 mo)', 'Phase 5: Moonshot (1-2 yr)'];
+
+  // Group opportunities by phase
+  const byPhase = [1,2,3,4,5].map(p => OPPORTUNITIES.filter(o => o.phase === p));
+
+  const labels = [];
+  const data = [];
+  const bgColors = [];
+
+  byPhase.forEach((group, pi) => {
+    group.forEach((o, oi) => {
+      labels.push(o.name);
+      const start = [0, 4, 12, 24, 48][pi]; // weeks
+      const end = [4, 12, 24, 48, 96][pi];
+      data.push([start, end]);
+      bgColors.push(phaseColors[pi] + '99');
+    });
+  });
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Timeline (weeks)',
+        data: data.map(d => d[1] - d[0]),
+        backgroundColor: bgColors,
+        borderColor: bgColors.map(c => c.replace('99', 'ff')),
+        borderWidth: 1,
+        borderRadius: 4,
+        barPercentage: 0.7
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const idx = context.dataIndex;
+              const [start, end] = data[idx];
+              return `${start}-${end} weeks | ${OPPORTUNITIES.find(o=>o.name===labels[idx])?.difficulty}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Duration (weeks)', color: '#888' },
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#888' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#ccc', font: { size: 10, family: 'JetBrains Mono' } }
+        }
+      }
+    }
+  });
+}
+
+buildRoadmap();
+
+// ═══════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════
+function buildHeatmap() {
+  const container = document.getElementById('heatmap-container');
+  const topRepos = ALL_REPOS.slice(0, 20); // Top 20 for readability
+
+  // Build overlap matrix
+  const matrix = {};
+  topRepos.forEach(r1 => {
+    matrix[r1] = {};
+    topRepos.forEach(r2 => {
+      matrix[r1][r2] = OPPORTUNITIES.filter(o => o.repos.includes(r1) && o.repos.includes(r2)).length;
+    });
+  });
+
+  let html = '<table class="heatmap-table"><thead><tr><th></th>';
+  topRepos.forEach(r => html += `<th>${r}</th>`);
+  html += '</tr></thead><tbody>';
+
+  topRepos.forEach(r1 => {
+    html += `<tr><td class="row-label">${r1}</td>`;
+    topRepos.forEach(r2 => {
+      const val = matrix[r1][r2];
+      const maxVal = 15;
+      const intensity = Math.min(val / maxVal, 1);
+      let bg;
+      if (r1 === r2) {
+        bg = `rgba(0,255,170,${0.3 + intensity * 0.7})`;
+      } else if (val === 0) {
+        bg = 'rgba(255,255,255,0.02)';
+      } else {
+        bg = `rgba(0,${Math.floor(150 + intensity * 105)},${Math.floor(100 + intensity * 70)},${0.2 + intensity * 0.6})`;
+      }
+      html += `<td style="background:${bg}" title="${r1} ↔ ${r2}: ${val} shared opportunities">${val || ''}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+buildHeatmap();
+
+// ═══════════════════════════════════════════════════
+// PHASE TIMELINE
+// ═══════════════════════════════════════════════════
+function buildPhases() {
+  const container = document.getElementById('phase-timeline');
+  const phases = [
+    { num: 1, name: 'Quick Wins', time: '1-4 weeks', color: '#00ffaa', desc: 'Direct use of existing repo code' },
+    { num: 2, name: 'Integration', time: '1-3 months', color: '#00d4ff', desc: 'Moderate cross-repo integration' },
+    { num: 3, name: 'Development', time: '3-6 months', color: '#7b61ff', desc: 'Significant new development' },
+    { num: 4, name: 'R&D', time: '6-12 months', color: '#ff6b6b', desc: 'Research + development required' },
+    { num: 5, name: 'Moonshot', time: '1-2 years', color: '#ffd93d', desc: 'New hardware / breakthroughs' }
+  ];
+
+  phases.forEach(p => {
+    const opps = OPPORTUNITIES.filter(o => o.phase === p.num);
+    const card = document.createElement('div');
+    card.className = 'phase-card';
+    card.style.borderColor = p.color + '44';
+    card.innerHTML = `
+      <h3 style="color:${p.color}">Phase ${p.num}: ${p.name}</h3>
+      <div class="phase-time">${p.time} · ${opps.length} opportunities</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.8rem">${p.desc}</div>
+      <div class="phase-items">
+        ${opps.map(o => `<div style="padding:0.2rem 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+          <span style="color:${p.color}">●</span> ${o.name}
+          <span style="color:var(--text-dim);font-size:0.7rem"> — ${o.difficulty}</span>
+        </div>`).join('')}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+buildPhases();
+</script>
+
+</body>
+</html>
