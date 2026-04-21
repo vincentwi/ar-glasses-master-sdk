@@ -3,7 +3,9 @@ info:
   title: AR Glasses Master SDK API
   description: 'Comprehensive REST-like documentation API for the AR Glasses Master SDK. Covers 27+ repositories, 500+ functions
     across 12 domains: Display, IMU, Camera, Audio, BLE, Gesture, Spatial Computing, ML/AI, GPS, Device Management, StardustXR
-    3D, and Geo/Maps Intelligence.'
+    3D, and Geo/Maps Intelligence. ENRICHED with deep-read documentation from all source repositories including: Fusion AHRS
+    C function signatures, XRLinuxDriver USB VID/PIDs, StardustXR KDL protocol, Monado xrt_device methods, RayNeo Feishu SDK
+    docs, Overpass QL query templates, Gemini Maps grounding API, headset-utils Rust traits, and xreal-webxr WebHID protocol.'
   version: 1.0.0
   contact:
     name: AR Glasses SDK Team
@@ -581,8 +583,26 @@ paths:
     get:
       operationId: display_everysight_sdk_Text_builder
       summary: Everysight Maverick text builder
-      description: Fluent builder API for rendering text on Everysight Maverick glasses. Chain setText(), setResource(), setTextAlign(),
-        setXY(), setForegroundColor(), addTo().
+      description: |-
+        Fluent builder API for rendering text on Everysight Maverick glasses. Chain setText(), setResource(), setTextAlign(), setXY(), setForegroundColor(), addTo().
+
+        --- Deep-Read Documentation ---
+
+        Everysight Maverick SDK — Fluent builder API for AR glasses HUD rendering.
+        Hello World example (Kotlin):
+          Text().setText("Hello Developer")
+            .setResource(Font.StockFont.Medium)
+            .setTextAlign(Align.center)
+            .setXY(getWidth()/2, getHeight()/2)
+            .setForegroundColor(EvsColor.Green.rgba)
+            .addTo(this)
+        UI classes: Screen, ArScreen, Viewport, UIElement, Text, TextBlock, ImgSrc, AutoLayout, Column, Row.
+        AR classes (beta): ArWindow, ArModel, ArPrimitive, ArLines, ArPoints, ArTriangles, ArFactory.
+        Sensors: enableInertialSensors(), enableGyro/Magnetometer/Accelerometer(),
+          registerYprSensorsEvents(), registerQuaternionSensorsEvents().
+        BLE: Uses serviceCBUUID, charNotifyCBUUID, charControlCBUUID, charPairingCBUUID.
+        Distribution: Maven (Android), SPM (iOS). Requires sdk.key for authentication.
+        Source: Everysight Maverick SDK v2.5.0-2.6.1 (deep-read 02-everysight-coredevices.md)
       tags:
       - display
       responses:
@@ -612,7 +632,20 @@ paths:
     get:
       operationId: display_RayDesk_StreamRenderer
       summary: OpenGL stream renderer
-      description: 'Main OpenGL renderer supporting multiple display modes: flat quad, curved cylinder, and keyhole viewport.'
+      description: |-
+        Main OpenGL renderer supporting multiple display modes: flat quad, curved cylinder, and keyhole viewport.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class StreamRenderer(context: Context) : GLSurfaceView.Renderer
+        Core OpenGL renderer for RayDesk (Moonlight/Sunshine streaming on RayNeo X3 Pro).
+        Display modes: FLOATING_MONITOR (3D virtual screen), KEYHOLE_PANNING (UV-based panning), CURVED_MONITOR (cylindrical projection).
+        Properties: @Volatile displayMode, videoProvider, headYawDegrees/headPitchDegrees,
+          cursorX/cursorY, casSharpening (0-1), stereoEnabled.
+        Methods: updateStreamResolution(w,h), recenterVirtualScreen/CurvedMonitor/Keyhole(),
+          setVirtualScreenScale(s), setCurvedMonitorRadius(r), setEnvironmentEnabled/Theme().
+        Video: Moonlight NvConnection -> MediaCodecDecoder -> OES texture -> GL render.
+        Source: RayDesk/app/src/main/java/...gl/StreamRenderer.kt (998 lines)
       tags:
       - display
       responses:
@@ -626,7 +659,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_zoomIn
       summary: Zoom in curved monitor
-      description: Zoom in on the curved virtual monitor.
+      description: |-
+        Zoom in on the curved virtual monitor.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -640,7 +683,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_zoomOut
       summary: Zoom out curved monitor
-      description: Zoom out on the curved virtual monitor.
+      description: |-
+        Zoom out on the curved virtual monitor.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -654,7 +707,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_resetZoom
       summary: Reset zoom
-      description: Reset curved monitor zoom to default.
+      description: |-
+        Reset curved monitor zoom to default.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -668,7 +731,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_setRadius
       summary: Set cylinder radius
-      description: Set the curved monitor cylinder radius.
+      description: |-
+        Set the curved monitor cylinder radius.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -695,7 +768,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_getViewMatrix
       summary: Get view matrix
-      description: Get the current view matrix as a 16-float array.
+      description: |-
+        Get the current view matrix as a 16-float array.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -709,7 +792,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_getMVPMatrix
       summary: Get MVP matrix
-      description: Get model-view-projection matrix.
+      description: |-
+        Get model-view-projection matrix.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -723,7 +816,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_getLeftEyeMVPMatrix
       summary: Get left eye MVP
-      description: Get left eye model-view-projection matrix.
+      description: |-
+        Get left eye model-view-projection matrix.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -737,7 +840,17 @@ paths:
     get:
       operationId: display_RayDesk_CylinderController_getRightEyeMVPMatrix
       summary: Get right eye MVP
-      description: Get right eye model-view-projection matrix.
+      description: |-
+        Get right eye model-view-projection matrix.
+
+        --- Deep-Read Documentation ---
+
+        Kotlin class CylinderController — Curved cylindrical display controller.
+        Uses OpenGL cylinder mesh for widescreen virtual monitor.
+        Methods: zoomIn/Out/resetZoom(), setRadius(r, immediate),
+          getViewMatrix/getMVPMatrix/getLeftEyeMVPMatrix/getRightEyeMVPMatrix() -> FloatArray (4x4).
+        Returns 16-float column-major matrices for stereo rendering.
+        Source: RayDesk/app/src/main/java/.../spatial/CylinderController.kt
       tags:
       - display
       responses:
@@ -931,8 +1044,15 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsInitialise
       summary: Initialize AHRS
-      description: Initialize the AHRS structure with default settings. Resets quaternion to identity and enables startup
-        mode.
+      description: |-
+        Initialize the AHRS structure with default settings. Resets quaternion to identity and enables startup mode.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsInitialise(FusionAhrs *const ahrs);
+        Initialises the AHRS structure with default settings (convention=NWU, gain=0.5, gyroscopeRange=0.0, accelerationRejection=90.0, magneticRejection=90.0, recoveryTriggerPeriod=0). Resets quaternion to identity {1,0,0,0} and enables startup mode with gain ramping. The FusionAhrs struct contains: settings (FusionAhrsSettings), quaternion (FusionQuaternion), accelerometer, halfGravity vectors, startup flag, rampedGain, and recovery state variables.
+        Source: Fusion/FusionAhrs.h (xioTechnologies/Fusion)
+        Cross-ref: Call FusionAhrsSetSettings() to customize, FusionAhrsUpdate() to process IMU data.
       tags:
       - imu
       responses:
@@ -946,8 +1066,21 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsSetSettings
       summary: Configure AHRS settings
-      description: 'Configure AHRS algorithm parameters: convention, gain, gyroscope range, rejection thresholds, recovery
-        period.'
+      description: |-
+        Configure AHRS algorithm parameters: convention, gain, gyroscope range, rejection thresholds, recovery period.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsSetSettings(FusionAhrs *const ahrs, const FusionAhrsSettings *const settings);
+        FusionAhrsSettings fields:
+          - convention: FusionConventionNwu (North-West-Up), FusionConventionEnu (East-North-Up), or FusionConventionNed (North-East-Down)
+          - gain: float — Complementary filter gain (0.5 typical; 0=gyro only, higher=more accel/mag trust)
+          - gyroscopeRange: float — Gyroscope range in deg/s (0=disable angular rate recovery)
+          - accelerationRejection: float — Threshold in degrees for rejecting spurious accelerometer data (0=disable; 10 typical)
+          - magneticRejection: float — Threshold in degrees for rejecting spurious magnetometer data (0=disable; 10 typical)
+          - recoveryTriggerPeriod: unsigned int — Samples before triggering recovery (0=disable; 5*sampleRate typical)
+        Internally converts rejection thresholds. Disables rejection if gain=0 or recoveryTriggerPeriod=0.
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -961,7 +1094,22 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsUpdate
       summary: AHRS update (full)
-      description: Core AHRS update with gyroscope, accelerometer, and magnetometer. Implements revised Madgwick algorithm.
+      description: |-
+        Core AHRS update with gyroscope, accelerometer, and magnetometer. Implements revised Madgwick algorithm.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsUpdate(FusionAhrs *const ahrs, const FusionVector gyroscope, const FusionVector accelerometer, const FusionVector magnetometer, const float deltaTime);
+        Core AHRS update implementing the revised Madgwick algorithm (PhD thesis Ch.7). Parameters:
+          - ahrs: FusionAhrs* — AHRS state structure
+          - gyroscope: FusionVector — Gyroscope reading in degrees per second
+          - accelerometer: FusionVector — Accelerometer reading in g (1g = 9.81 m/s²)
+          - magnetometer: FusionVector — Magnetometer in any calibrated units
+          - deltaTime: float — Time since last update in seconds (e.g., 0.01 for 100Hz)
+        Algorithm: Integrates gyroscope with accelerometer/magnetometer feedback via complementary filter. Handles startup gain ramping (high initial gain for fast convergence), angular rate recovery (detects and compensates for gyroscope saturation), and acceleration/magnetic rejection (ignores spurious sensor readings using cross-product error metrics).
+        Output: Updates internal quaternion. Retrieve via FusionAhrsGetQuaternion().
+        Source: Fusion/FusionAhrs.c
+        Cross-ref: FusionAhrsUpdateNoMagnetometer() for 6-axis, FusionAhrsUpdateExternalHeading() for GPS heading.
       tags:
       - imu
       responses:
@@ -982,7 +1130,22 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsUpdateNoMagnetometer
       summary: AHRS update (no mag)
-      description: AHRS update without magnetometer. Heading is zeroed during startup phase.
+      description: |-
+        AHRS update without magnetometer. Heading is zeroed during startup phase.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsUpdate(FusionAhrs *const ahrs, const FusionVector gyroscope, const FusionVector accelerometer, const FusionVector magnetometer, const float deltaTime);
+        Core AHRS update implementing the revised Madgwick algorithm (PhD thesis Ch.7). Parameters:
+          - ahrs: FusionAhrs* — AHRS state structure
+          - gyroscope: FusionVector — Gyroscope reading in degrees per second
+          - accelerometer: FusionVector — Accelerometer reading in g (1g = 9.81 m/s²)
+          - magnetometer: FusionVector — Magnetometer in any calibrated units
+          - deltaTime: float — Time since last update in seconds (e.g., 0.01 for 100Hz)
+        Algorithm: Integrates gyroscope with accelerometer/magnetometer feedback via complementary filter. Handles startup gain ramping (high initial gain for fast convergence), angular rate recovery (detects and compensates for gyroscope saturation), and acceleration/magnetic rejection (ignores spurious sensor readings using cross-product error metrics).
+        Output: Updates internal quaternion. Retrieve via FusionAhrsGetQuaternion().
+        Source: Fusion/FusionAhrs.c
+        Cross-ref: FusionAhrsUpdateNoMagnetometer() for 6-axis, FusionAhrsUpdateExternalHeading() for GPS heading.
       tags:
       - imu
       responses:
@@ -996,7 +1159,22 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsUpdateExternalHeading
       summary: AHRS update (external heading)
-      description: AHRS update using external heading (e.g., GPS compass) instead of magnetometer.
+      description: |-
+        AHRS update using external heading (e.g., GPS compass) instead of magnetometer.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsUpdate(FusionAhrs *const ahrs, const FusionVector gyroscope, const FusionVector accelerometer, const FusionVector magnetometer, const float deltaTime);
+        Core AHRS update implementing the revised Madgwick algorithm (PhD thesis Ch.7). Parameters:
+          - ahrs: FusionAhrs* — AHRS state structure
+          - gyroscope: FusionVector — Gyroscope reading in degrees per second
+          - accelerometer: FusionVector — Accelerometer reading in g (1g = 9.81 m/s²)
+          - magnetometer: FusionVector — Magnetometer in any calibrated units
+          - deltaTime: float — Time since last update in seconds (e.g., 0.01 for 100Hz)
+        Algorithm: Integrates gyroscope with accelerometer/magnetometer feedback via complementary filter. Handles startup gain ramping (high initial gain for fast convergence), angular rate recovery (detects and compensates for gyroscope saturation), and acceleration/magnetic rejection (ignores spurious sensor readings using cross-product error metrics).
+        Output: Updates internal quaternion. Retrieve via FusionAhrsGetQuaternion().
+        Source: Fusion/FusionAhrs.c
+        Cross-ref: FusionAhrsUpdateNoMagnetometer() for 6-axis, FusionAhrsUpdateExternalHeading() for GPS heading.
       tags:
       - imu
       responses:
@@ -1017,7 +1195,16 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetQuaternion
       summary: Get AHRS quaternion
-      description: Returns the current orientation quaternion describing sensor orientation relative to Earth.
+      description: |-
+        Returns the current orientation quaternion describing sensor orientation relative to Earth.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionQuaternion FusionAhrsGetQuaternion(const FusionAhrs *const ahrs);
+        Returns the current orientation quaternion {w, x, y, z} describing sensor orientation relative to Earth. Convention-aware (NWU/ENU/NED as configured). The quaternion is a unit quaternion (|q|=1).
+        Return type: FusionQuaternion — union of float array[4] and struct {w, x, y, z}.
+        Usage: Convert to Euler with FusionQuaternionToEuler(), to matrix with FusionQuaternionToMatrix().
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1031,7 +1218,14 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsSetQuaternion
       summary: Set AHRS quaternion
-      description: Set the orientation quaternion directly.
+      description: |-
+        Set the orientation quaternion directly.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsSetQuaternion(FusionAhrs *const ahrs, const FusionQuaternion quaternion);
+        Directly sets the orientation quaternion. Use for initialization from known orientation or for manual correction.
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1045,7 +1239,14 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetGravity
       summary: Get gravity vector
-      description: Returns direction of gravity in sensor frame as a unit vector.
+      description: |-
+        Returns direction of gravity in sensor frame as a unit vector.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionVector FusionAhrsGetGravity(const FusionAhrs *const ahrs);
+        Returns direction of gravity in sensor frame as a unit vector. Computed from the current quaternion orientation. Convention-aware (NWU: {0,0,+1}, NED: {0,0,-1}).
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1059,7 +1260,14 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetLinearAcceleration
       summary: Get linear acceleration
-      description: Returns linear acceleration (gravity removed) in sensor frame, in g units.
+      description: |-
+        Returns linear acceleration (gravity removed) in sensor frame, in g units.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionVector FusionAhrsGetLinearAcceleration(const FusionAhrs *const ahrs);
+        Returns linear acceleration (accelerometer with gravity removed) in sensor frame, in g units. Computed as: accelerometer - gravity_direction. Useful for detecting motion, steps, gestures.
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1073,7 +1281,14 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetEarthAcceleration
       summary: Get Earth-frame acceleration
-      description: Returns acceleration in Earth frame with gravity removed.
+      description: |-
+        Returns acceleration in Earth frame with gravity removed.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionVector FusionAhrsGetEarthAcceleration(const FusionAhrs *const ahrs);
+        Returns acceleration in Earth frame with gravity removed. Rotates the accelerometer reading to Earth frame using the current quaternion, then subtracts gravity vector. Useful for navigation and dead-reckoning in world coordinates.
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1087,7 +1302,20 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetInternalStates
       summary: Get AHRS internal states
-      description: 'Returns internal algorithm states: accelerationError, magneticError, ignored flags, recovery triggers.'
+      description: |-
+        Returns internal algorithm states: accelerationError, magneticError, ignored flags, recovery triggers.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionAhrsInternalStates FusionAhrsGetInternalStates(const FusionAhrs *const ahrs);
+        Returns internal algorithm states for debugging/monitoring:
+          - accelerationError: float — Angular error in degrees between accelerometer and algorithm output
+          - accelerometerIgnored: bool — true if accelerometer was rejected in last update
+          - accelerationRecoveryTrigger: float — Recovery trigger progress 0.0-1.0
+          - magneticError: float — Angular error in degrees between magnetometer and algorithm
+          - magnetometerIgnored: bool — true if magnetometer was rejected
+          - magneticRecoveryTrigger: float — Magnetic recovery trigger 0.0-1.0
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1101,7 +1329,18 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsGetFlags
       summary: Get AHRS flags
-      description: 'Returns algorithm flags: startup, angularRateRecovery, accelerationRecovery, magneticRecovery.'
+      description: |-
+        Returns algorithm flags: startup, angularRateRecovery, accelerationRecovery, magneticRecovery.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionAhrsFlags FusionAhrsGetFlags(const FusionAhrs *const ahrs);
+        Returns algorithm status flags:
+          - startup: bool — true during initial convergence period (gain ramping)
+          - angularRateRecovery: bool — true if gyroscope saturation detected and being compensated
+          - accelerationRecovery: bool — true during acceleration recovery mode
+          - magneticRecovery: bool — true during magnetic recovery mode
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1115,7 +1354,15 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsSetHeading
       summary: Set AHRS heading
-      description: Sets the heading (yaw) by applying a Z-axis rotation.
+      description: |-
+        Sets the heading (yaw) by applying a Z-axis rotation.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsSetHeading(FusionAhrs *const ahrs, const float heading);
+        Sets the heading (yaw) of the current orientation by applying a Z-axis rotation to match the desired heading in degrees. Does not affect pitch or roll.
+          - heading: float — Desired heading in degrees (0=North)
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1136,7 +1383,14 @@ paths:
     get:
       operationId: imu_Fusion_FusionAhrsRestart
       summary: Restart AHRS
-      description: Restarts the AHRS algorithm. Resets quaternion to identity and enables startup gain ramping.
+      description: |-
+        Restarts the AHRS algorithm. Resets quaternion to identity and enables startup gain ramping.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionAhrsRestart(FusionAhrs *const ahrs);
+        Restarts the AHRS algorithm. Resets quaternion to identity {1,0,0,0}, re-enables startup mode with high initial gain for fast re-convergence. Use after significant orientation change or sensor reset.
+        Source: Fusion/FusionAhrs.h
       tags:
       - imu
       responses:
@@ -1486,7 +1740,15 @@ paths:
     get:
       operationId: imu_Fusion_FusionBiasInitialise
       summary: Initialize bias estimation
-      description: Initialize gyroscope bias estimation (100Hz, 3.0°/s threshold, 3.0s period).
+      description: |-
+        Initialize gyroscope bias estimation (100Hz, 3.0°/s threshold, 3.0s period).
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionBiasInitialise(FusionBias *const bias);
+        Initialises gyroscope bias estimation with default settings: sampleRate=100Hz, stationaryThreshold=3.0 deg/s, stationaryPeriod=3.0s. Zeroes the offset vector.
+        FusionBias struct: settings, filterCoefficient, timeout, timer, offset (FusionVector).
+        Source: Fusion/FusionBias.h
       tags:
       - imu
       responses:
@@ -1500,7 +1762,18 @@ paths:
     get:
       operationId: imu_Fusion_FusionBiasSetSettings
       summary: Configure bias settings
-      description: 'Configure bias estimation: sampleRate, stationaryThreshold, stationaryPeriod.'
+      description: |-
+        Configure bias estimation: sampleRate, stationaryThreshold, stationaryPeriod.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void FusionBiasSetSettings(FusionBias *const bias, const FusionBiasSettings *const settings);
+        FusionBiasSettings fields:
+          - sampleRate: float — Sample rate in Hz (default: 100)
+          - stationaryThreshold: float — Max gyro magnitude in deg/s to consider stationary (default: 3.0)
+          - stationaryPeriod: float — Seconds of stationary detection before updating bias (default: 3.0)
+        Computes internal filter coefficient and timeout from settings.
+        Source: Fusion/FusionBias.h
       tags:
       - imu
       responses:
@@ -1514,7 +1787,16 @@ paths:
     get:
       operationId: imu_Fusion_FusionBiasUpdate
       summary: Update bias estimation
-      description: Update bias estimation and return offset-corrected gyroscope. Detects stationary periods.
+      description: |-
+        Update bias estimation and return offset-corrected gyroscope. Detects stationary periods.
+
+        --- Deep-Read Documentation ---
+
+        C signature: FusionVector FusionBiasUpdate(FusionBias *const bias, FusionVector gyroscope);
+        Must be called every sample. Detects stationary periods (gyro magnitude < threshold for stationaryPeriod). During stationary, updates bias offset using low-pass filter. Returns offset-corrected gyroscope.
+          - gyroscope: FusionVector — Raw gyroscope in degrees per second
+          - returns: FusionVector — Bias-corrected gyroscope in degrees per second
+        Source: Fusion/FusionBias.c
       tags:
       - imu
       responses:
@@ -1556,7 +1838,18 @@ paths:
     get:
       operationId: imu_Fusion_FusionCompass
       summary: Tilt-compensated compass
-      description: Calculates tilt-compensated magnetic heading using accelerometer for tilt.
+      description: |-
+        Calculates tilt-compensated magnetic heading using accelerometer for tilt.
+
+        --- Deep-Read Documentation ---
+
+        C signature: float FusionCompass(const FusionVector accelerometer, const FusionVector magnetometer, const FusionConvention convention);
+        Calculates tilt-compensated magnetic heading. Uses accelerometer to determine tilt (gravity direction), then projects magnetometer onto horizontal plane. Convention-aware: computes north/west/east vectors differently per NWU/ENU/NED convention.
+          - accelerometer: FusionVector — in any calibrated units
+          - magnetometer: FusionVector — in any calibrated units
+          - convention: FusionConvention — Earth axes convention
+          - returns: float — Magnetic heading in degrees (0-360)
+        Source: Fusion/FusionCompass.c
       tags:
       - imu
       responses:
@@ -1570,7 +1863,18 @@ paths:
     get:
       operationId: imu_Fusion_FusionModelInertial
       summary: Inertial sensor calibration
-      description: 'Apply inertial sensor calibration: M * s * (raw - offset).'
+      description: |-
+        Apply inertial sensor calibration: M * s * (raw - offset).
+
+        --- Deep-Read Documentation ---
+
+        C signature: static inline FusionVector FusionModelInertial(const FusionVector uncalibrated, const FusionMatrix misalignment, const FusionVector sensitivity, const FusionVector offset);
+        Applies gyroscope/accelerometer calibration model: result = M * diag(s) * (raw - offset)
+          - uncalibrated: Raw sensor reading
+          - misalignment: 3x3 misalignment correction matrix
+          - sensitivity: Sensitivity diagonal (as vector for element-wise multiply)
+          - offset: Zero-rate offset vector
+        Source: Fusion/FusionModel.h
       tags:
       - imu
       responses:
@@ -1584,7 +1888,17 @@ paths:
     get:
       operationId: imu_Fusion_FusionModelMagnetic
       summary: Magnetometer calibration
-      description: 'Apply magnetometer calibration: S * (raw - h).'
+      description: |-
+        Apply magnetometer calibration: S * (raw - h).
+
+        --- Deep-Read Documentation ---
+
+        C signature: static inline FusionVector FusionModelMagnetic(const FusionVector uncalibrated, const FusionMatrix softIronMatrix, const FusionVector hardIronOffset);
+        Applies magnetometer calibration: result = S * (raw - h)
+          - uncalibrated: Raw magnetometer reading
+          - softIronMatrix: 3x3 soft-iron correction matrix
+          - hardIronOffset: Hard-iron offset vector
+        Source: Fusion/FusionModel.h
       tags:
       - imu
       responses:
@@ -1598,7 +1912,16 @@ paths:
     get:
       operationId: imu_Fusion_FusionRemap
       summary: Remap sensor axes
-      description: Remap sensor axes using one of 24 orthogonal permutations for non-standard mounting.
+      description: |-
+        Remap sensor axes using one of 24 orthogonal permutations for non-standard mounting.
+
+        --- Deep-Read Documentation ---
+
+        C signature: static inline FusionVector FusionRemap(const FusionVector sensor, const FusionRemapAlignment alignment);
+        Remaps sensor axes using one of 24 orthogonal permutations for non-standard mounting.
+        FusionRemapAlignment enum values: PXPYPz (+X+Y+Z, no remap), PXPZNY (+X+Z-Y), etc.
+        Example: If sensor is mounted rotated 90° around X, use the appropriate alignment to remap axes to body frame before passing to AHRS.
+        Source: Fusion/FusionRemap.h
       tags:
       - imu
       responses:
@@ -1626,7 +1949,15 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_normalize_quaternion
       summary: Normalize quaternion
-      description: Normalize a quaternion to unit length.
+      description: |-
+        Normalize a quaternion to unit length.
+
+        --- Deep-Read Documentation ---
+
+        C signature: imu_quat_type normalize_quaternion(imu_quat_type q);
+        Normalizes quaternion {x,y,z,w} to unit length. Part of XRLinuxDriver imu.c (258 lines).
+        Type: imu_quat_type { float x, y, z, w }
+        Source: XRLinuxDriver/src/imu.c
       tags:
       - imu
       responses:
@@ -1640,7 +1971,14 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_multiply_quaternions
       summary: Multiply quaternions
-      description: Hamilton product of two quaternions.
+      description: |-
+        Hamilton product of two quaternions.
+
+        --- Deep-Read Documentation ---
+
+        C signature: imu_quat_type multiply_quaternions(imu_quat_type q1, imu_quat_type q2);
+        Hamilton product of two quaternions. Used in pose pipeline for reference pose subtraction.
+        Source: XRLinuxDriver/src/imu.c
       tags:
       - imu
       responses:
@@ -1654,7 +1992,15 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_euler_to_quaternion_xyz
       summary: Euler to quaternion (XYZ)
-      description: Convert Euler angles (XYZ order) to quaternion.
+      description: |-
+        Convert Euler angles (XYZ order) to quaternion.
+
+        --- Deep-Read Documentation ---
+
+        C signature: imu_quat_type euler_to_quaternion_xyz(imu_euler_type euler);
+        Convert Euler angles (XYZ order) to quaternion. imu_euler_type { float roll, pitch, yaw }.
+        Also available: euler_to_quaternion_zyx(), euler_to_quaternion_zxy().
+        Source: XRLinuxDriver/src/imu.c
       tags:
       - imu
       responses:
@@ -1668,7 +2014,15 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_quaternion_to_euler_zyx
       summary: Quaternion to Euler (ZYX)
-      description: Convert quaternion to Euler angles (ZYX order).
+      description: |-
+        Convert quaternion to Euler angles (ZYX order).
+
+        --- Deep-Read Documentation ---
+
+        C signature: imu_euler_type quaternion_to_euler_zyx(imu_quat_type q);
+        Convert quaternion to Euler angles (ZYX intrinsic order). Returns {roll, pitch, yaw} in radians.
+        Also available: quaternion_to_euler_xyz(), quaternion_to_euler_zxy().
+        Source: XRLinuxDriver/src/imu.c
       tags:
       - imu
       responses:
@@ -1787,7 +2141,17 @@ paths:
     get:
       operationId: imu_PhoenixHeadTracker_StartConnection
       summary: Connect to XREAL Air
-      description: Connect to XREAL Air glasses via AirAPI_Windows.dll. Returns 1 on success.
+      description: |-
+        Connect to XREAL Air glasses via AirAPI_Windows.dll. Returns 1 on success.
+
+        --- Deep-Read Documentation ---
+
+        C FFI: #[no_mangle] pub extern "C" fn StartConnection() -> i32;
+        Windows .NET: [DllImport("AirAPI_Windows")] static extern int StartConnection();
+        Connects to XREAL Air glasses via AirAPI_Windows.dll + hidapi.dll.
+        Returns 1 on success, 0 on failure. XREAL Air VID: 0x3318.
+        Also available in headset-utils Rust: Connection::start() -> Result<&Connection>.
+        Source: PhoenixHeadTracker/Form1.cs, headset-utils/lib.rs
       tags:
       - imu
       responses:
@@ -1815,7 +2179,20 @@ paths:
     get:
       operationId: imu_PhoenixHeadTracker_GetEuler
       summary: Get Euler angles
-      description: 'Read Euler angles from glasses. Returns pointer to float[3]: [roll, pitch, yaw].'
+      description: |-
+        Read Euler angles from glasses. Returns pointer to float[3]: [roll, pitch, yaw].
+
+        --- Deep-Read Documentation ---
+
+        C FFI: #[no_mangle] pub extern "C" fn GetEuler() -> *const f32;
+        Windows .NET: [DllImport("AirAPI_Windows")] static extern IntPtr GetEuler();
+        Returns pointer to float[3]: [roll, pitch, yaw] in degrees (FRD frame - Forward-Right-Down).
+        The headset-utils Rust backend uses NaiveCF complementary filter with:
+          BASE_GRAV_RATIO=0.005, INCONSISTENCY_DECAY=0.90
+        Coordinate conversion: RUB (sensor) -> FRD (output): (-z, x, -y).
+        PhoenixHeadTracker applies Kalman filter (q=process noise, r=measurement noise) on deltas,
+        then outputs to OpenTrack UDP (127.0.0.1:4242, 48 bytes: 6 doubles [x,y,z,yaw,pitch,roll]).
+        Source: PhoenixHeadTracker/Form1.cs, headset-utils/lib.rs + naive_cf.rs
       tags:
       - imu
       responses:
@@ -1829,7 +2206,21 @@ paths:
     get:
       operationId: imu_PhoenixHeadTracker_KalmanFilter_Update
       summary: Kalman filter update
-      description: 1D Kalman filter for smoothing IMU deltas. Returns filtered value.
+      description: |-
+        1D Kalman filter for smoothing IMU deltas. Returns filtered value.
+
+        --- Deep-Read Documentation ---
+
+        class KalmanFilter:
+          KalmanFilter(double q, double r, double p, double x)
+            q: process noise covariance
+            r: measurement noise covariance
+            p: initial estimate error covariance
+            x: initial state estimate
+          double Update(double measurement) -> filtered value
+        1D Kalman filter used for smoothing IMU rotation deltas before sending to OpenTrack.
+        Three instances: one each for yaw (x), pitch (y), and roll.
+        Source: PhoenixHeadTracker/Form1.cs
       tags:
       - imu
       responses:
@@ -1878,7 +2269,19 @@ paths:
     get:
       operationId: imu_headset_utils_NaiveCF_new
       summary: Create complementary filter
-      description: Create a naive complementary filter combining accelerometer and gyroscope.
+      description: |-
+        Create a naive complementary filter combining accelerometer and gyroscope.
+
+        --- Deep-Read Documentation ---
+
+        Rust: pub struct NaiveCF { glasses, attitude, prev_gyro, inconsistency }
+        Naive complementary filter combining accelerometer and gyroscope.
+        Constants: BASE_GRAV_RATIO=0.005 (accel trust), INCONSISTENCY_DECAY=0.90.
+        Coordinate frame: RUB (Right-Up-Back) input, FRD (Forward-Right-Down) output.
+        RUB to FRD conversion: (-z, x, -y).
+        Methods: new(glasses) -> NaiveCF, update() integrates gyro + accel correction.
+        get_correction(acc, rotation, scale) -> gravity-based rotation correction.
+        Source: headset-utils/src/naive_cf.rs
       tags:
       - imu
       responses:
@@ -1892,7 +2295,18 @@ paths:
     get:
       operationId: imu_headset_utils_any_fusion
       summary: Auto-detect fusion
-      description: Auto-detect glasses and create a fusion instance.
+      description: |-
+        Auto-detect glasses and create a fusion instance.
+
+        --- Deep-Read Documentation ---
+
+        Rust: pub fn any_fusion() -> Result<Box<dyn Fusion>>;
+        Auto-detects connected glasses and creates NaiveCF complementary filter fusion instance.
+        Tries each supported type in order: Rokid (VID=0x04d2), NrealAir (VID=0x3318),
+        NrealLight (VID=0x0486), Grawoow G530 (VID=0x1ff7), MadGaze Glow (serial).
+        The Fusion trait provides: attitude_quaternion() -> UnitQuaternion<f32>,
+          inconsistency_frd() -> f32, update() -> (), attitude_frd_rad/deg() -> Vector3<f32>.
+        Source: headset-utils/src/lib.rs
       tags:
       - imu
       responses:
@@ -1975,7 +2389,16 @@ paths:
     get:
       operationId: imu_RayDesk_OneEuroFilter
       summary: 1€ noise filter
-      description: 1€ noise filter for smooth head tracking. Combines low-pass filtering with speed-adaptive cutoff.
+      description: |-
+        1€ noise filter for smooth head tracking. Combines low-pass filtering with speed-adaptive cutoff.
+
+        --- Deep-Read Documentation ---
+
+        1€ (One Euro) noise filter for smooth head tracking with low latency.
+        Combines low-pass filtering with speed-adaptive cutoff frequency.
+        At low speed: aggressive smoothing (low cutoff). At high speed: responsive (high cutoff).
+        Parameters: minCutoff (Hz), beta (speed coefficient), dCutoff (derivative cutoff).
+        Source: RayDesk/app/src/main/java/.../spatial/OneEuroFilter.kt
       tags:
       - imu
       responses:
@@ -2073,7 +2496,18 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_RegisterIMUEventCallback
       summary: Register RayNeo IMU callback
-      description: Register callback for IMU events from RayNeo glasses.
+      description: |-
+        Register callback for IMU events from RayNeo glasses.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK function for registering IMU event callbacks. Part of the ARDK for Android (AAR).
+        Used with OpenIMU/CloseIMU for IMU data streaming.
+        Android sensor alternative: SensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+        Rates: SENSOR_DELAY_FASTEST, SENSOR_DELAY_GAME, SENSOR_DELAY_NORMAL, SENSOR_DELAY_UI
+        Returns quaternion data convertible to Euler angles.
+        Source: RayNeo ARDK (Feishu docs)
+        Cross-ref: XRLinuxDriver rayneo.c — EstablishUsbConnection, StartXR, OpenIMU, GetHeadTrackerPose
       tags:
       - imu
       responses:
@@ -2087,7 +2521,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_OpenIMU
       summary: Open RayNeo IMU
-      description: Start IMU streaming from RayNeo glasses.
+      description: |-
+        Start IMU streaming from RayNeo glasses.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2101,7 +2560,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_CloseIMU
       summary: Close RayNeo IMU
-      description: Stop IMU streaming from RayNeo glasses.
+      description: |-
+        Stop IMU streaming from RayNeo glasses.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2115,7 +2599,17 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_GetHeadTrackerPose
       summary: Get RayNeo head tracker pose
-      description: 'Get 6DoF pose from RayNeo: rotation[4], position[3], timestamp.'
+      description: |-
+        Get 6DoF pose from RayNeo: rotation[4], position[3], timestamp.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK: Gets 6DoF pose — rotation[4] (quaternion xyzw), position[3] (meters), timestamp.
+        Requires StartXR() to be called first. Uses VGA camera for visual-inertial SLAM.
+        SlamState enum: INITIALIZING, TRACKING_SUCCESS, TRACKING_FAIL.
+        Unity API: Algorithm.EnableSlamHeadTracker(), Algorithm.GetSlamStatus()
+        XRLinuxDriver uses: VID=0x1bbb, PID=0xaf50, coordinate system East-Up-South → NWU with 15° offset.
+        Source: RayNeo ARDK + XRLinuxDriver/src/devices/rayneo.c
       tags:
       - imu
       responses:
@@ -2129,7 +2623,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_Recenter
       summary: Recenter RayNeo tracking
-      description: Recenter the RayNeo tracking origin.
+      description: |-
+        Recenter the RayNeo tracking origin.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2143,7 +2662,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_register_raw_callback
       summary: Register VITURE raw IMU
-      description: Register raw IMU callback for VITURE glasses.
+      description: |-
+        Register raw IMU callback for VITURE glasses.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2157,7 +2701,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_register_pose_callback
       summary: Register VITURE pose callback
-      description: Register pose callback for VITURE glasses.
+      description: |-
+        Register pose callback for VITURE glasses.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2171,7 +2740,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_open_imu
       summary: Open VITURE IMU
-      description: Start VITURE IMU streaming with specified mode and frequency.
+      description: |-
+        Start VITURE IMU streaming with specified mode and frequency.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -2185,7 +2779,32 @@ paths:
     get:
       operationId: imu_XRLinuxDriver_close_imu
       summary: Close VITURE IMU
-      description: Stop VITURE IMU streaming.
+      description: |-
+        Stop VITURE IMU streaming.
+
+        --- Deep-Read Documentation ---
+
+        Supported USB VID/PIDs (from XRLinuxDriver/src/devices/):
+
+        XREAL (VID: 0x3318):
+          0x0424=Air, 0x0428=Air 2, 0x0432=Air 2 Pro, 0x0426=Air 2 Ultra
+          0x0435/0x0436=One Pro, 0x0437/0x0438=One, 0x043e/0x043d=1S
+          FOV: Air=45°, Ultra=52°, One Pro=57°, One=50°, 1S=52°
+          IMU: 250Hz (forced from 1000Hz native), Resolution: 1920x1080
+
+        VITURE (VID: 0x35ca):
+          0x1011/0x1013/0x1017=One(40°), 0x1015/0x101b=One Lite(40°)
+          0x1019/0x101d=Pro(43°), 0x1131=Luma(50°), 0x1121/0x1141=Luma Pro(52°)
+          0x1101/0x1104=Luma Ultra(52°), 0x1151=Luma Cyber(52°), 0x1201=Beast(58°)
+          IMU: 60-1000Hz configurable
+
+        Rokid (VID from SDK header):
+          0x162B-0x162F, 0x2002, 0x2180 = Max/Air
+          FOV: 45°, IMU: 90Hz
+
+        RayNeo (VID: 0x1bbb, PID: 0xaf50):
+          Models: NXTWEAR S/S+, Air 2, 2s, 3s/Pro
+          FOV: 43°, IMU: 250Hz (forced from 500Hz)
       tags:
       - imu
       responses:
@@ -3135,7 +3754,14 @@ paths:
     get:
       operationId: gesture_XRLinuxDriver_multitap_detection
       summary: Multi-tap gesture detection
-      description: Detects double-tap (recenter) and triple-tap (recalibrate) from IMU acceleration spikes.
+      description: |-
+        Detects double-tap (recenter) and triple-tap (recalibrate) from IMU acceleration spikes.
+
+        --- Deep-Read Documentation ---
+
+        C signature: Implemented in XRLinuxDriver/src/multitap.c
+        Detects double-tap (recenter screen) and triple-tap (recalibrate) from IMU acceleration spikes. Configurable via config.ini multi_tap_enabled flag. Uses acceleration magnitude threshold with timing windows to distinguish tap count.
+        Source: XRLinuxDriver/src/multitap.c
       tags:
       - gesture
       responses:
@@ -3350,7 +3976,23 @@ paths:
     get:
       operationId: gesture_stardust_core_Hand
       summary: Hand tracking skeleton
-      description: Full hand skeleton with 26 joints from OpenXR hand tracking. Includes Thumb, Finger structs.
+      description: |-
+        Full hand skeleton with 26 joints from OpenXR hand tracking. Includes Thumb, Finger structs.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Hand struct — Full hand articulation from OpenXR hand tracking:
+          right: bool, thumb: Thumb (tip/distal/proximal/metacarpal joints),
+          index/middle/ring/little: Finger (tip/distal/intermediate/proximal/metacarpal),
+          palm/wrist/elbow: Joint {position: Vec3, rotation: Quat, radius: f32, distance: f32}
+        Heuristic methods: palm_normal(), radial_axis(), distal_axis(),
+          finger_curl(finger) -> f32, thumb_curl() -> f32,
+          pinch_distance(finger) -> f32, pinch_position() -> Vec3,
+          stable_pinch_position() -> Vec3, predicted_pinch_position() -> Vec3,
+          pinch_strength() -> f32, fist_strength() -> f32.
+        Input system: InputMethod + InputHandler matched via SDF field distance.
+        Protocol: FlatBuffers over Unix domain sockets with SCM_RIGHTS FD passing.
+        Source: stardust-xr-fusion (Rust), protocol/input.kdl
       tags:
       - gesture
       responses:
@@ -3546,7 +4188,15 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_update_inputs
       summary: Update device inputs
-      description: Refresh input state on Monado XR device.
+      description: |-
+        Refresh input state on Monado XR device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*update_inputs)(struct xrt_device *xdev);
+        Refreshes all input state on a Monado XR device. Must be called before reading input values. Part of the xrt_device function pointer table (25+ methods). Supports 50+ device types including XREAL Air (VID=0x3318), Rokid, simulated HMD, hand trackers, etc.
+        Return: XRT_SUCCESS (0) on success, or XRT_ERROR_* codes.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3560,7 +4210,18 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_get_tracked_pose
       summary: Get tracked pose
-      description: Get 6DoF pose from Monado device.
+      description: |-
+        Get 6DoF pose from Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*get_tracked_pose)(struct xrt_device *xdev, enum xrt_input_name name, int64_t at_timestamp_ns, struct xrt_space_relation *out_relation);
+        Gets 6DoF pose from device at a specific timestamp. Returns xrt_space_relation containing:
+          - pose: xrt_pose {orientation: xrt_quat, position: xrt_vec3}
+          - linear_velocity, angular_velocity: xrt_vec3
+          - relation_flags: bitmask of valid components
+        Supported by devices with orientation_tracking or position_tracking capability.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3574,7 +4235,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_get_hand_tracking
       summary: Get hand tracking
-      description: Get hand joint positions from Monado device.
+      description: |-
+        Get hand joint positions from Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*get_hand_tracking)(struct xrt_device *xdev, enum xrt_input_name name, int64_t desired_timestamp_ns, struct xrt_hand_joint_set *out_value, int64_t *out_timestamp_ns);
+        Gets hand joint positions (26 joints per OpenXR XR_EXT_hand_tracking). Returns xrt_hand_joint_set with joint poses and radii. Supported by Leap Motion (ultraleap_v2/v5), hand tracking driver (ht), and controller emulation.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3588,7 +4256,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_get_face_tracking
       summary: Get face tracking
-      description: Get facial expressions from Monado device.
+      description: |-
+        Get facial expressions from Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*get_face_tracking)(struct xrt_device *xdev, enum xrt_input_name facial_expression_type, int64_t at_timestamp_ns, struct xrt_facial_expression_set *out_value);
+        Gets facial expressions. Supports XR_FB_face_tracking2 and XR_HTC_facial_tracking extensions. Device types: XRT_DEVICE_FB_FACE_TRACKING2, XRT_DEVICE_HTC_FACE_TRACKING, XRT_DEVICE_ANDROID_FACE_TRACKING.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3602,7 +4277,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_get_body_joints
       summary: Get body joints
-      description: Get full body tracking joints.
+      description: |-
+        Get full body tracking joints.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*get_body_joints)(struct xrt_device *xdev, enum xrt_input_name body_tracking_type, int64_t desired_timestamp_ns, struct xrt_body_joint_set *out_value);
+        Gets full body tracking joints. Supports XR_FB_body_tracking and XR_META_body_tracking_full_body. Device type: XRT_DEVICE_FB_BODY_TRACKING. Includes calibration via reset/set_calibration_override_meta.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3616,7 +4298,15 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_set_output
       summary: Set haptic output
-      description: Set haptic output on Monado device.
+      description: |-
+        Set haptic output on Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*set_output)(struct xrt_device *xdev, enum xrt_output_name name, const union xrt_output_value *value);
+        Sets haptic/vibration output on device. Maps to OpenXR xrApplyHapticFeedback.
+        Supported by controllers with force_feedback capability.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3658,7 +4348,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_compute_distortion
       summary: Compute lens distortion
-      description: Compute lens distortion correction.
+      description: |-
+        Compute lens distortion correction.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*compute_distortion)(struct xrt_device *xdev, uint32_t view, float u, float v, struct xrt_uv_triplet *out_result);
+        Computes lens distortion correction for a given UV coordinate. Used by the Vulkan compositor for rendering. Distortion models: NONE, COMPUTE (this function), MESHUV (pre-computed mesh).
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3672,7 +4369,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_get_battery_status
       summary: Get device battery
-      description: Get battery level from Monado device.
+      description: |-
+        Get battery level from Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*get_battery_status)(struct xrt_device *xdev, bool *out_present, bool *out_charging, float *out_charge);
+        Gets battery level. out_charge is 0.0-1.0. Requires battery_status capability.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3686,7 +4390,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_device_set_brightness
       summary: Set display brightness
-      description: Set display brightness on Monado device.
+      description: |-
+        Set display brightness on Monado device.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*set_brightness)(struct xrt_device *xdev, float brightness, bool relative);
+        Sets display brightness. If relative=true, adjusts by brightness delta. Requires brightness_control capability.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
       tags:
       - spatial
       responses:
@@ -3700,7 +4411,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_space_overseer_create_offset_space
       summary: Create offset space
-      description: Create a space with offset from parent.
+      description: |-
+        Create a space with offset from parent.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*create_offset_space)(struct xrt_space_overseer *xso, struct xrt_space *parent, const struct xrt_pose *offset, struct xrt_space **out_space);
+        Creates a space with a fixed offset from parent. Used for creating reference spaces (VIEW, LOCAL, STAGE, LOCAL_FLOOR, UNBOUNDED) from the root tracking space.
+        Source: monado/src/xrt/include/xrt/xrt_space.h
       tags:
       - spatial
       responses:
@@ -3728,7 +4446,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_space_overseer_locate_space
       summary: Locate space (Monado)
-      description: Locate one space relative to another.
+      description: |-
+        Locate one space relative to another.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*locate_space)(struct xrt_space_overseer *xso, struct xrt_space *base_space, const struct xrt_pose *base_offset, int64_t at_ns, struct xrt_space *space, const struct xrt_pose *offset, struct xrt_space_relation *out_rel);
+        Locates one space relative to another at a given timestamp. Returns xrt_space_relation with pose, velocities, and validity flags. Core operation for OpenXR xrLocateSpace.
+        Source: monado/src/xrt/include/xrt/xrt_space.h
       tags:
       - spatial
       responses:
@@ -3742,7 +4467,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_space_overseer_locate_spaces
       summary: Batch locate spaces
-      description: Batch locate multiple spaces.
+      description: |-
+        Batch locate multiple spaces.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*locate_space)(struct xrt_space_overseer *xso, struct xrt_space *base_space, const struct xrt_pose *base_offset, int64_t at_ns, struct xrt_space *space, const struct xrt_pose *offset, struct xrt_space_relation *out_rel);
+        Locates one space relative to another at a given timestamp. Returns xrt_space_relation with pose, velocities, and validity flags. Core operation for OpenXR xrLocateSpace.
+        Source: monado/src/xrt/include/xrt/xrt_space.h
       tags:
       - spatial
       responses:
@@ -3756,7 +4488,14 @@ paths:
     get:
       operationId: spatial_Monado_xrt_space_overseer_recenter_local_spaces
       summary: Recenter local spaces
-      description: Recenter all local spaces.
+      description: |-
+        Recenter all local spaces.
+
+        --- Deep-Read Documentation ---
+
+        C signature: xrt_result_t (*recenter_local_spaces)(struct xrt_space_overseer *xso);
+        Recenters all local reference spaces to current head position. Called when user requests recenter.
+        Source: monado/src/xrt/include/xrt/xrt_space.h
       tags:
       - spatial
       responses:
@@ -3812,7 +4551,19 @@ paths:
     get:
       operationId: spatial_XRLinuxDriver_setup_ipc_values
       summary: Setup IPC shared memory
-      description: Set up shared memory IPC for pose data communication between driver and applications.
+      description: |-
+        Set up shared memory IPC for pose data communication between driver and applications.
+
+        --- Deep-Read Documentation ---
+
+        C signature: void setup_ipc()
+        Sets up shared memory IPC for pose data communication. Creates memory-mapped files for:
+          - Quaternion orientation (x, y, z, w)
+          - Euler angles (roll, pitch, yaw)
+          - Euler velocities
+          - Look-ahead prediction values
+        Used by Breezy Desktop and other consumers to read head pose without direct connection.
+        Source: XRLinuxDriver/src/ipc.c
       tags:
       - spatial
       responses:
@@ -3840,7 +4591,15 @@ paths:
     get:
       operationId: spatial_XRLinuxDriver_StartXR
       summary: Start RayNeo XR
-      description: Start XR mode on RayNeo glasses.
+      description: |-
+        Start XR mode on RayNeo glasses.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK: Starts XR mode on glasses. Must be called before GetHeadTrackerPose() or OpenIMU().
+        On X2: Enables 6DOF SLAM with VGA camera fusion.
+        On X3 Pro: Enables 3DOF or optional 6DOF mode.
+        Source: RayNeo ARDK, XRLinuxDriver/src/devices/rayneo.c
       tags:
       - spatial
       responses:
@@ -3854,7 +4613,13 @@ paths:
     get:
       operationId: spatial_XRLinuxDriver_StopXR
       summary: Stop RayNeo XR
-      description: Stop XR mode on RayNeo glasses.
+      description: |-
+        Stop XR mode on RayNeo glasses.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK: Stops XR mode. Releases camera and SLAM resources.
+        Source: RayNeo ARDK, XRLinuxDriver/src/devices/rayneo.c
       tags:
       - spatial
       responses:
@@ -3868,7 +4633,14 @@ paths:
     get:
       operationId: spatial_XRLinuxDriver_SwitchTo2D
       summary: Switch RayNeo to 2D
-      description: Switch RayNeo display to 2D mode.
+      description: |-
+        Switch RayNeo display to 2D mode.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK: Switches display to 2D mode (single view, no SBS).
+        Resolution: 1920x1080 per eye.
+        Source: XRLinuxDriver/src/devices/rayneo.c
       tags:
       - spatial
       responses:
@@ -3882,7 +4654,14 @@ paths:
     get:
       operationId: spatial_XRLinuxDriver_SwitchTo3D
       summary: Switch RayNeo to 3D
-      description: Switch RayNeo display to 3D/SBS mode.
+      description: |-
+        Switch RayNeo display to 3D/SBS mode.
+
+        --- Deep-Read Documentation ---
+
+        RayNeo SDK: Switches display to 3D/SBS (side-by-side) mode.
+        Resolution: 3840x1080 total (1920x1080 per eye).
+        Source: XRLinuxDriver/src/devices/rayneo.c
       tags:
       - spatial
       responses:
@@ -6714,7 +7493,19 @@ paths:
     get:
       operationId: stardust_stardust_core_Field_create
       summary: Create SDF field
-      description: 'Create a signed distance field: Sphere, Box, Cylinder, Torus, CubicSpline.'
+      description: |-
+        Create a signed distance field: Sphere, Box, Cylinder, Torus, CubicSpline.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Field — Signed Distance Field shapes for spatial interaction.
+        Shape union: Box(Vec3) | Sphere(f32) | Cylinder(CylinderShape) | Torus(TorusShape) | Spline(CubicSplineShape)
+        Methods: distance(space, point)->f32, normal(space, point)->Vec3,
+          closest_point(space, point)->Vec3, ray_march(space, origin, direction)->RayMarchResult,
+          set_shape(Shape), export_field()->u64.
+        Fields are used by the SUIS (Spatial Universal Interaction System) to match
+        InputMethods with InputHandlers via distance ordering.
+        Source: stardust-xr-fusion/fields.rs, protocol/field.kdl
       tags:
       - stardust
       responses:
@@ -6728,7 +7519,19 @@ paths:
     get:
       operationId: stardust_stardust_core_Field_distance
       summary: SDF distance query
-      description: Evaluate signed distance function at a point.
+      description: |-
+        Evaluate signed distance function at a point.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Field — Signed Distance Field shapes for spatial interaction.
+        Shape union: Box(Vec3) | Sphere(f32) | Cylinder(CylinderShape) | Torus(TorusShape) | Spline(CubicSplineShape)
+        Methods: distance(space, point)->f32, normal(space, point)->Vec3,
+          closest_point(space, point)->Vec3, ray_march(space, origin, direction)->RayMarchResult,
+          set_shape(Shape), export_field()->u64.
+        Fields are used by the SUIS (Spatial Universal Interaction System) to match
+        InputMethods with InputHandlers via distance ordering.
+        Source: stardust-xr-fusion/fields.rs, protocol/field.kdl
       tags:
       - stardust
       responses:
@@ -6742,7 +7545,19 @@ paths:
     get:
       operationId: stardust_stardust_core_Field_normal
       summary: SDF surface normal
-      description: Get surface normal at a point.
+      description: |-
+        Get surface normal at a point.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Field — Signed Distance Field shapes for spatial interaction.
+        Shape union: Box(Vec3) | Sphere(f32) | Cylinder(CylinderShape) | Torus(TorusShape) | Spline(CubicSplineShape)
+        Methods: distance(space, point)->f32, normal(space, point)->Vec3,
+          closest_point(space, point)->Vec3, ray_march(space, origin, direction)->RayMarchResult,
+          set_shape(Shape), export_field()->u64.
+        Fields are used by the SUIS (Spatial Universal Interaction System) to match
+        InputMethods with InputHandlers via distance ordering.
+        Source: stardust-xr-fusion/fields.rs, protocol/field.kdl
       tags:
       - stardust
       responses:
@@ -6756,7 +7571,19 @@ paths:
     get:
       operationId: stardust_stardust_core_Field_closest_point
       summary: SDF closest point
-      description: Get nearest surface point.
+      description: |-
+        Get nearest surface point.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Field — Signed Distance Field shapes for spatial interaction.
+        Shape union: Box(Vec3) | Sphere(f32) | Cylinder(CylinderShape) | Torus(TorusShape) | Spline(CubicSplineShape)
+        Methods: distance(space, point)->f32, normal(space, point)->Vec3,
+          closest_point(space, point)->Vec3, ray_march(space, origin, direction)->RayMarchResult,
+          set_shape(Shape), export_field()->u64.
+        Fields are used by the SUIS (Spatial Universal Interaction System) to match
+        InputMethods with InputHandlers via distance ordering.
+        Source: stardust-xr-fusion/fields.rs, protocol/field.kdl
       tags:
       - stardust
       responses:
@@ -6770,7 +7597,19 @@ paths:
     get:
       operationId: stardust_stardust_core_Field_ray_march
       summary: SDF ray marching
-      description: Ray march through the field.
+      description: |-
+        Ray march through the field.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Field — Signed Distance Field shapes for spatial interaction.
+        Shape union: Box(Vec3) | Sphere(f32) | Cylinder(CylinderShape) | Torus(TorusShape) | Spline(CubicSplineShape)
+        Methods: distance(space, point)->f32, normal(space, point)->Vec3,
+          closest_point(space, point)->Vec3, ray_march(space, origin, direction)->RayMarchResult,
+          set_shape(Shape), export_field()->u64.
+        Fields are used by the SUIS (Spatial Universal Interaction System) to match
+        InputMethods with InputHandlers via distance ordering.
+        Source: stardust-xr-fusion/fields.rs, protocol/field.kdl
       tags:
       - stardust
       responses:
@@ -6798,7 +7637,23 @@ paths:
     get:
       operationId: stardust_stardust_core_InputHandler_create
       summary: Create input handler
-      description: Create input handler that receives events when InputMethod intersects Field.
+      description: |-
+        Create input handler that receives events when InputMethod intersects Field.
+
+        --- Deep-Read Documentation ---
+
+        StardustXR Hand struct — Full hand articulation from OpenXR hand tracking:
+          right: bool, thumb: Thumb (tip/distal/proximal/metacarpal joints),
+          index/middle/ring/little: Finger (tip/distal/intermediate/proximal/metacarpal),
+          palm/wrist/elbow: Joint {position: Vec3, rotation: Quat, radius: f32, distance: f32}
+        Heuristic methods: palm_normal(), radial_axis(), distal_axis(),
+          finger_curl(finger) -> f32, thumb_curl() -> f32,
+          pinch_distance(finger) -> f32, pinch_position() -> Vec3,
+          stable_pinch_position() -> Vec3, predicted_pinch_position() -> Vec3,
+          pinch_strength() -> f32, fist_strength() -> f32.
+        Input system: InputMethod + InputHandler matched via SDF field distance.
+        Protocol: FlatBuffers over Unix domain sockets with SCM_RIGHTS FD passing.
+        Source: stardust-xr-fusion (Rust), protocol/input.kdl
       tags:
       - stardust
       responses:
@@ -7120,7 +7975,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_Overpass_run_query
       summary: Run Overpass query
-      description: Run an OpenStreetMap Overpass query (OverpassQL, XML, or SQL).
+      description: |-
+        Run an OpenStreetMap Overpass query (OverpassQL, XML, or SQL).
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7141,7 +8023,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_Overpass_kill_my_queries
       summary: Abort running queries
-      description: Abort all running Overpass queries.
+      description: |-
+        Abort all running Overpass queries.
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7155,7 +8064,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_Overpass_status
       summary: Overpass server status
-      description: Check Overpass API server status.
+      description: |-
+        Check Overpass API server status.
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7169,7 +8105,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_ffs_construct_query
       summary: Natural language to Overpass
-      description: Build an Overpass query from natural language search using OSM tag presets.
+      description: |-
+        Build an Overpass query from natural language search using OSM tag presets.
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7190,7 +8153,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_ffs_repair_search
       summary: Repair search query
-      description: Attempt to repair an invalid Overpass search query.
+      description: |-
+        Attempt to repair an invalid Overpass search query.
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7204,7 +8194,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_autorepair
       summary: Auto-fix Overpass query
-      description: Automatically fix common Overpass query errors (missing recurse, output format, geometry).
+      description: |-
+        Automatically fix common Overpass query errors (missing recurse, output format, geometry).
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7218,7 +8235,34 @@ paths:
     get:
       operationId: geo_overpass_turbo_template_shortcuts
       summary: Template shortcuts
-      description: 'Mustache-style templates: {{bbox}}, {{center}}, {{date:offset}}, {{geocodeArea:name}}, {{geocodeCoords:name}}.'
+      description: |-
+        Mustache-style templates: {{bbox}}, {{center}}, {{date:offset}}, {{geocodeArea:name}}, {{geocodeCoords:name}}.
+
+        --- Deep-Read Documentation ---
+
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7232,7 +8276,36 @@ paths:
     get:
       operationId: geo_gemini_maps_generate_content
       summary: Gemini Maps grounding
-      description: Query Gemini with Google Maps grounding for location-aware AI responses.
+      description: |-
+        Query Gemini with Google Maps grounding for location-aware AI responses.
+
+        --- Deep-Read Documentation ---
+
+        Gemini API Maps Grounding — connects Gemini AI with 250M+ Google Maps places.
+
+        API Config (JSON):
+          {"tools": {"googleMaps": {}},
+           "toolConfig": {"retrievalConfig": {"latLng": {"latitude": N, "longitude": N}}}}
+
+        Python SDK:
+          from google import genai
+          client = genai.Client()
+          response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents="Find coffee near here",
+            config=types.GenerateContentConfig(
+              tools=[types.Tool(google_maps=types.GoogleMaps())],
+              tool_config=types.ToolConfig(retrieval_config=types.RetrievalConfig(
+                lat_lng=types.LatLng(latitude=LAT, longitude=LNG)))))
+
+        Response fields:
+          groundingChunks[].maps: {uri, title, placeId}
+          groundingSupports[]: {segment: {startIndex, endIndex, text}, groundingChunkIndices}
+          googleMapsWidgetContextToken: for rendering Places widget
+
+        Pricing: $25/1K grounded prompts, free tier 500/day.
+        Supported models: Gemini 3.1 Pro/Flash-Lite, 3 Flash, 2.5 Pro/Flash/Flash-Lite, 2.0 Flash.
+        Source: Google Gemini API docs (deep-read 10-geo-maps.md)
       tags:
       - geo
       responses:
@@ -7709,6 +8782,447 @@ paths:
       description: GET/POST/DELETE/PUT /api-keys — CRUD for API keys.
       tags:
       - geo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/imu/Fusion/FusionQuaternionVectorProduct:
+    get:
+      operationId: imu_Fusion_FusionQuaternionVectorProduct
+      summary: Quaternion-vector product
+      description: |-
+        C signature: static inline FusionQuaternion FusionQuaternionVectorProduct(const FusionQuaternion q, const FusionVector v);
+        Returns q * v where v is treated as quaternion with w=0.
+        Source: Fusion/FusionMath.h
+      tags:
+      - imu
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/imu/Fusion/FusionQuaternionNormSquared:
+    get:
+      operationId: imu_Fusion_FusionQuaternionNormSquared
+      summary: Quaternion norm squared
+      description: |-
+        C signature: static inline float FusionQuaternionNormSquared(const FusionQuaternion q);
+        Returns |q|² (w²+x²+y²+z²). More efficient than computing norm when only comparison needed.
+        Source: Fusion/FusionMath.h
+      tags:
+      - imu
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/gps/rayneo-sdk/GPSIPCHelper.registerGPSInfo:
+    get:
+      operationId: gps_rayneo_sdk_GPSIPCHelper_registerGPSInfo
+      summary: Register RayNeo GPS data stream
+      description: |-
+        Java: GPSIPCHelper.registerGPSInfo(callback);
+        Starts GPS data stream from tethered phone to RayNeo glasses via IPCSDK.
+        Requires: MobileState.isMobileConnected() == true.
+        GPS JSON fields: mLatitude (double), mLongitude (double), mAltitude (double),
+          mSpeed (float), mBearing (float), mProvider (String: "gps"/"network"),
+          mTime (long), mHorizontalAccuracyMeters (float).
+        Source: RayNeo IPCSDK (Feishu docs)
+      tags:
+      - gps
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/gps/rayneo-sdk/GPSIPCHelper.unRegisterGPSInfo:
+    get:
+      operationId: gps_rayneo_sdk_GPSIPCHelper_unRegisterGPSInfo
+      summary: Unregister RayNeo GPS stream
+      description: |-
+        Java: GPSIPCHelper.unRegisterGPSInfo();
+        Stops GPS data stream from phone.
+        Source: RayNeo IPCSDK (Feishu docs)
+      tags:
+      - gps
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/gesture/rayneo-sdk/RingIPCHelper.registerRingInfo:
+    get:
+      operationId: gesture_rayneo_sdk_RingIPCHelper_registerRingInfo
+      summary: Register RayNeo ring data stream
+      description: |-
+        Java: RingIPCHelper.registerRingInfo(callback);
+        Starts ring controller data from RayNeo smart ring via IPCSDK.
+        Ring data JSON: ring_connected (boolean), ring_imu_status (String),
+          quaternion: {w: float, x: float, y: float, z: float}.
+        Control: setRingIMU(boolean), setRingLongClick(), setRingSeparateButton().
+        Source: RayNeo IPCSDK (Feishu docs)
+      tags:
+      - gesture
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/spatial/rayneo-sdk/Algorithm.EnableSlamHeadTracker:
+    get:
+      operationId: spatial_rayneo_sdk_Algorithm_EnableSlamHeadTracker
+      summary: Enable RayNeo 6DOF SLAM
+      description: |-
+        Unity/C#: Algorithm.EnableSlamHeadTracker();
+        Starts 6DOF SLAM head tracking on RayNeo X2 using VGA camera + IMU fusion.
+        Poll status with Algorithm.GetSlamStatus() -> SlamState:
+          INITIALIZING (warming up), TRACKING_SUCCESS (active), TRACKING_FAIL (lost).
+        Stop with Algorithm.DisableSlamHeadTracker().
+        Provides full 6DOF pose (position + rotation) for spatial computing.
+        Source: RayNeo ARDK for Unity (Feishu docs)
+      tags:
+      - spatial
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/imu/rayneo-sdk/HeadTrackedPoseParams.AwakeDriver:
+    get:
+      operationId: imu_rayneo_sdk_HeadTrackedPoseParams_AwakeDriver
+      summary: Initialize RayNeo 3DOF driver
+      description: |-
+        Unity/C#: HeadTrackedPoseParams.AwakeDriver();
+        Initializes 3DOF head tracking on RayNeo glasses.
+        Callback: void OnPostUpdate(Pose pose) — receives quaternion orientation.
+        Reset: void ResetRotation() — resets heading to zero.
+        Tracks pitch, yaw, roll (no positional tracking).
+        Android equivalent: SensorManager.getDefaultSensor(TYPE_GAME_ROTATION_VECTOR).
+        Source: RayNeo ARDK for Unity (Feishu docs)
+      tags:
+      - imu
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/camera/rayneo-sdk/ShareCamera.OpenCamera:
+    get:
+      operationId: camera_rayneo_sdk_ShareCamera_OpenCamera
+      summary: Open RayNeo shared camera
+      description: |-
+        Unity/C#: ShareCamera.OpenCamera(XRCameraType type, XRResolution resolution, RawImage display, int frameRate);
+        Opens camera on RayNeo glasses. Types: VGA (for SLAM), main (for capture).
+        Uses Android Camera2 API internally. Output to Unity RawImage.
+        Source: RayNeo ARDK for Unity (Feishu docs)
+      tags:
+      - camera
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/gesture/rayneo-sdk/TouchDispatcher:
+    get:
+      operationId: gesture_rayneo_sdk_TouchDispatcher
+      summary: RayNeo temple touch dispatcher
+      description: |-
+        RayNeo ARDK class that distributes touch events from the temple touchpad.
+        TempleAction enum: SlideForward, SlideBackward, SwipeUp, SwipeDown,
+          TwoFingerTap, LongPress, SingleTap, DoubleTap.
+        Used with CommonTouchCallback and BaseEventActivity.
+        Source: RayNeo ARDK (Feishu docs)
+      tags:
+      - gesture
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/display/rayneo-sdk/BindingPair.updateView:
+    get:
+      operationId: display_rayneo_sdk_BindingPair_updateView
+      summary: RayNeo binocular view sync
+      description: |-
+        Java: void updateView();
+        Syncs view content to both left and right eye displays on RayNeo.
+        Related: setLeft(), checkIsLeft(), make3DEffect(), make3DEffectForSide().
+        Classes: BaseMirrorActivity, BaseMirrorFragment, MirrorContainerView.
+        Source: RayNeo ARDK (Feishu docs)
+      tags:
+      - display
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/geo/geo/overpass.query:
+    get:
+      operationId: geo_geo_overpass_query
+      summary: Execute Overpass QL query
+      description: |-
+        Overpass API query endpoint: POST https://overpass-api.de/api/interpreter
+        Public instances: overpass-api.de, maps.mail.ru/osm/tools/overpass, overpass.private.coffee
+
+        Query Language: OverpassQL (primary), XML, SQL (via Postpass)
+
+        Template variables:
+          {{bbox}} — Current map bounding box (s,w,n,e)
+          {{center}} — Map center (lat,lng)
+          {{geocodeArea:name}} — Nominatim area lookup
+          {{geocodeCoords:name}} — Nominatim coordinate lookup
+
+        Example — nearby restaurants:
+          [out:json][timeout:25];
+          nwr["amenity"="restaurant"](around:500,{lat},{lng});
+          out geom;
+
+        Example — all POIs in view:
+          [out:json][timeout:25];
+          (node["amenity"]({{bbox}});node["shop"]({{bbox}});node["tourism"]({{bbox}}););
+          out geom;
+
+        Rate limits: ~10K/day fair use, free. Response: JSON elements[] with nodes/ways/relations.
+        Source: overpass-turbo source code analysis (deep-read 10-geo-maps.md)
+      tags:
+      - geo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/geo/geo/gemini.maps.grounding:
+    get:
+      operationId: geo_geo_gemini_maps_grounding
+      summary: Gemini Maps grounding query
+      description: |-
+        Gemini API Maps Grounding — connects Gemini AI with 250M+ Google Maps places.
+
+        API Config (JSON):
+          {"tools": {"googleMaps": {}},
+           "toolConfig": {"retrievalConfig": {"latLng": {"latitude": N, "longitude": N}}}}
+
+        Python SDK:
+          from google import genai
+          client = genai.Client()
+          response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents="Find coffee near here",
+            config=types.GenerateContentConfig(
+              tools=[types.Tool(google_maps=types.GoogleMaps())],
+              tool_config=types.ToolConfig(retrieval_config=types.RetrievalConfig(
+                lat_lng=types.LatLng(latitude=LAT, longitude=LNG)))))
+
+        Response fields:
+          groundingChunks[].maps: {uri, title, placeId}
+          groundingSupports[]: {segment: {startIndex, endIndex, text}, groundingChunkIndices}
+          googleMapsWidgetContextToken: for rendering Places widget
+
+        Pricing: $25/1K grounded prompts, free tier 500/day.
+        Supported models: Gemini 3.1 Pro/Flash-Lite, 3 Flash, 2.5 Pro/Flash/Flash-Lite, 2.0 Flash.
+        Source: Google Gemini API docs (deep-read 10-geo-maps.md)
+      tags:
+      - geo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/geo/geo/nominatim.search:
+    get:
+      operationId: geo_geo_nominatim_search
+      summary: Nominatim geocoding search
+      description: |-
+        Nominatim OSM geocoding: GET https://nominatim.openstreetmap.org/search?format=json&q={search}
+        Returns JSON array with: lat, lon, boundingbox, osm_type, osm_id, display_name.
+        Rate limit: 1 request/second. Free to use with attribution.
+        Usage in AR: Convert place names or addresses to lat/lng coordinates for map overlay.
+        Source: overpass-turbo nominatim.ts (deep-read 10-geo-maps.md)
+      tags:
+      - geo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/imu/headset-utils/ARGlasses.read_event:
+    get:
+      operationId: imu_headset_utils_ARGlasses_read_event
+      summary: Read next glasses event (Rust)
+      description: |-
+        Rust trait: fn read_event(&mut self) -> Result<GlassesEvent>;
+        Blocks until next event from glasses. GlassesEvent variants:
+          AccGyro { accelerometer: Vector3<f32> (m/s²), gyroscope: Vector3<f32> (rad/s), timestamp: u64 (usec) }
+          Magnetometer { magnetometer: Vector3<f32> (uT), timestamp: u64 }
+          KeyPress(u8), ProximityNear, ProximityFar, AmbientLight(u16), VSync
+        Coordinate frame: RUB (Right-Up-Back), same as Android sensors.
+        Source: headset-utils/src/lib.rs
+      tags:
+      - imu
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/display/headset-utils/ARGlasses.set_display_mode:
+    get:
+      operationId: display_headset_utils_ARGlasses_set_display_mode
+      summary: Set glasses display mode (Rust)
+      description: |-
+        Rust trait: fn set_display_mode(&mut self, display_mode: DisplayMode) -> Result<()>;
+        DisplayMode enum: SameOnBoth (1920x1080 mirror), Stereo (3840x1080 SBS),
+          HalfSBS (960x540 upscaled), HighRefreshRate (120Hz mirror),
+          HighRefreshRateSBS (90Hz SBS).
+        Source: headset-utils/src/lib.rs
+      tags:
+      - display
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/device/xreal-webxr/xreal-webxr.requestDevice:
+    get:
+      operationId: device_xreal_webxr_xreal_webxr_requestDevice
+      summary: Request XREAL glasses via WebHID
+      description: |-
+        JavaScript: export async function requestDevice() -> Promise<Glasses|undefined>;
+        Opens WebHID device picker with vendor filters:
+          0x0486 (ASUS/Light), 0x0483 (STMicro/Light Boot), 0x3318 (XREAL Air).
+        Product IDs: Air=0x0423/0x0424, Light=0x573C/0x5740.
+        Returns GlassesAir or GlassesLight instance based on productId.
+        Source: xreal-webxr/common.js
+      tags:
+      - device
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/imu/xreal-webxr/xreal-webxr.startIMU:
+    get:
+      operationId: imu_xreal_webxr_xreal_webxr_startIMU
+      summary: Start XREAL IMU via WebHID
+      description: |-
+        JavaScript: export async function startIMU() -> string;
+        Starts IMU data polling (100ms interval) and sends W_TOGGLE_IMU [0x01] command.
+        IMU packet (Device3Packet, 56 bytes): signature[2], temperature[2], timestamp[8],
+          angular_multiplier[2], angular_divisor[4], angular_velocity_xyz[3x3bytes],
+          acceleration_multiplier[2], acceleration_divisor[4], acceleration_xyz[3x3bytes],
+          magnetic_multiplier[2], magnetic_divisor[4], magnetic_xyz[3x2bytes], checksum[4].
+        Protocol: HEAD=0xfd, 64-byte HID reports, CRC32 checksum, msgId at offset 15.
+        Source: xreal-webxr/js_air/manager.js + protocol.js
+      tags:
+      - imu
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/display/xreal-webxr/xreal-webxr.setBrightness:
+    get:
+      operationId: display_xreal_webxr_xreal_webxr_setBrightness
+      summary: Set XREAL brightness via WebHID
+      description: |-
+        JavaScript: export async function setBrightness(brightness_int: number) -> Uint8Array;
+        Sets display brightness on XREAL Air glasses. Uses brightInt2Bytes() conversion.
+        Protocol: Sends W_BRIGHTNESS message via 64-byte HID report.
+        Source: xreal-webxr/js_air/manager.js
+      tags:
+      - display
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/spatial/Monado/xrt_device.get_view_poses:
+    get:
+      operationId: spatial_Monado_xrt_device_get_view_poses
+      summary: Get per-eye view poses
+      description: |-
+        C signature: xrt_result_t (*get_view_poses)(struct xrt_device *xdev, const struct xrt_vec3 *default_eye_relation, int64_t at_timestamp_ns, enum xrt_view_type view_type, uint32_t view_count, struct xrt_space_relation *out_head_relation, struct xrt_fov *out_fovs, struct xrt_pose *out_poses);
+        Gets per-eye view poses for stereo rendering. Returns head relation + per-eye FOV + poses.
+        Maps to OpenXR xrLocateViews. view_type: STEREO, MONO, etc.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
+      tags:
+      - spatial
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/spatial/Monado/xrt_device.get_visibility_mask:
+    get:
+      operationId: spatial_Monado_xrt_device_get_visibility_mask
+      summary: Get lens visibility mask
+      description: |-
+        C signature: xrt_result_t (*get_visibility_mask)(struct xrt_device *xdev, enum xrt_visibility_mask_type type, uint32_t view_index, struct xrt_visibility_mask **out_mask);
+        Gets visibility mask for rendering optimization. Mask types define hidden/visible areas of the lens to avoid rendering pixels not visible to user.
+        Maps to OpenXR XR_KHR_visibility_mask extension.
+        Source: monado/src/xrt/include/xrt/xrt_device.h
+      tags:
+      - spatial
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+  /api/v1/device/Monado/xrt_prober.probe:
+    get:
+      operationId: device_Monado_xrt_prober_probe
+      summary: Monado device probe/discovery
+      description: |-
+        C signature: xrt_result_t (*probe)(struct xrt_prober *xp);
+        Probes for XR devices. Monado supports 38+ device drivers including:
+        xreal_air (VID=0x3318), rokid, wmr, survive, rift_s, psvr, psvr2, realsense, depthai,
+        ultraleap_v2/v5, north_star, opengloves, simulated, qwerty, and more.
+        After probing, use lock_list/create_system to access discovered devices.
+        Source: monado/src/xrt/include/xrt/xrt_prober.h
+      tags:
+      - device
       responses:
         '200':
           description: Success
