@@ -1,2 +1,3 @@
 api:
-  - openapi: openapi/openapi.yaml
+  specs:
+    - openapi: openapi/openapi.yaml
