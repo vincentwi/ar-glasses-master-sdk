@@ -43,6 +43,10 @@ tags:
   description: 3D Environment (StardustXR) — spatial nodes, drawables, fields, panels, Wayland integration
 - name: geo
   description: Geo/Maps Intelligence — Overpass OSM queries, Gemini Maps grounding, health data
+- name: super-resolution
+  description: AI Super-Resolution — real-time neural upscaling for AR glasses cameras
+- name: mesh
+  description: Mesh Networking — Meshtastic BLE-to-LoRa mesh communication
 paths:
   /api/v1/display/xg-glass-sdk/GlassesClient.display:
     get:
@@ -9230,6 +9234,221 @@ paths:
             application/json:
               schema:
                 type: object
+  /api/v1/camera/super-resolution:
+    post:
+      operationId: camera_super_resolution_upscale
+      summary: AI super-resolution upscale
+      description: |-
+        Trigger an AI-upscaled frame capture from the AR glasses camera. Crops a region of interest
+        based on zoom_level and upscales it using XLSR (3x, ~10ms) or Real-ESRGAN (4x, ~350ms).
+        Returns metadata about the processed frame.
+      tags:
+      - super-resolution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - zoom_level
+              properties:
+                zoom_level:
+                  type: number
+                  description: Zoom level from 1.0 (no crop) to 10.0 (max crop)
+                  minimum: 1.0
+                  maximum: 10.0
+                model:
+                  type: string
+                  description: Super-resolution model to use
+                  enum:
+                  - xlsr
+                  - real_esrgan
+                  default: xlsr
+                center_x:
+                  type: number
+                  description: Horizontal center of crop region (0.0-1.0)
+                  default: 0.5
+                center_y:
+                  type: number
+                  description: Vertical center of crop region (0.0-1.0)
+                  default: 0.5
+      responses:
+        '200':
+          description: Upscaled frame result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  frame_id:
+                    type: string
+                  resolution:
+                    type: string
+                  upscale_factor:
+                    type: integer
+                  latency_ms:
+                    type: number
+                  model_used:
+                    type: string
+  /api/v1/mesh/send:
+    post:
+      operationId: mesh_send_message
+      summary: Send mesh text message
+      description: |-
+        Send a text message over the Meshtastic LoRa mesh network. The message is serialized
+        as a protobuf MeshPacket with TEXT_MESSAGE_APP portnum and transmitted via BLE to the
+        connected Meshtastic node, which relays it over LoRa radio.
+      tags:
+      - mesh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - text
+              properties:
+                text:
+                  type: string
+                  description: Message text (max 237 bytes UTF-8)
+                  maxLength: 237
+                destination:
+                  type: string
+                  description: Destination node ID (hex) or "broadcast" for all nodes
+                  default: broadcast
+                channel:
+                  type: integer
+                  description: Meshtastic channel index
+                  default: 0
+                hop_limit:
+                  type: integer
+                  description: Maximum relay hops (1-7)
+                  default: 3
+                  minimum: 1
+                  maximum: 7
+                want_ack:
+                  type: boolean
+                  description: Request delivery acknowledgment
+                  default: false
+      responses:
+        '200':
+          description: Message queued for transmission
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message_id:
+                    type: string
+                  hop_limit:
+                    type: integer
+        '503':
+          description: No Meshtastic node connected
+  /api/v1/mesh/messages:
+    get:
+      operationId: mesh_get_messages
+      summary: Get received mesh messages
+      description: |-
+        Retrieve messages received from the Meshtastic mesh network. Returns text messages,
+        position reports, and telemetry data received since the last poll or within the
+        specified time window.
+      tags:
+      - mesh
+      parameters:
+      - name: since
+        in: query
+        description: Unix timestamp — return messages received after this time
+        required: false
+        schema:
+          type: integer
+      - name: limit
+        in: query
+        description: Maximum number of messages to return
+        required: false
+        schema:
+          type: integer
+          default: 50
+      - name: portnum
+        in: query
+        description: Filter by Meshtastic portnum (1=text, 3=position, 67=telemetry)
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: List of received mesh messages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from:
+                          type: string
+                          description: Sender node ID (hex)
+                        text:
+                          type: string
+                        portnum:
+                          type: integer
+                        timestamp:
+                          type: integer
+                        hop_count:
+                          type: integer
+                        rssi:
+                          type: number
+                        snr:
+                          type: number
+  /api/v1/mesh/status:
+    get:
+      operationId: mesh_get_status
+      summary: Get mesh connection status
+      description: |-
+        Get the current status of the Meshtastic mesh network connection, including
+        BLE connection state, connected node info, and known mesh peers.
+      tags:
+      - mesh
+      responses:
+        '200':
+          description: Mesh connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ble_connected:
+                    type: boolean
+                  node_id:
+                    type: string
+                    description: Connected Meshtastic node ID
+                  node_name:
+                    type: string
+                  channel_count:
+                    type: integer
+                  peers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        node_id:
+                          type: string
+                        name:
+                          type: string
+                        last_heard:
+                          type: integer
+                        rssi:
+                          type: number
+                        battery_level:
+                          type: integer
 components:
   schemas:
     FusionVector:

@@ -1,0 +1,233 @@
+---
+title: Meshtastic Mesh Networking
+subtitle: BLE-to-LoRa mesh communication from AR glasses via Meshtastic nodes
+slug: mesh-networking
+---
+
+## Overview
+
+AR glasses can communicate over **long-range mesh networks** by bridging to [Meshtastic](https://meshtastic.org/) nodes via Bluetooth Low Energy. This enables text messaging, telemetry sharing, and position broadcasting over **LoRa radio** — covering 1–10km per hop without cellular or Wi-Fi infrastructure.
+
+The glasses act as a BLE peripheral that connects to a nearby Meshtastic radio node. Messages are serialized as Protocol Buffers and relayed across the mesh.
+
+## Architecture
+
+```
+┌──────────────┐   BLE    ┌──────────────────┐   LoRa   ┌──────────────┐
+│  AR Glasses  │◀────────▶│  Meshtastic Node │◀────────▶│  Mesh Network│
+│  (BLE Client)│  GATT    │  (ESP32 + SX1262)│  915MHz  │  (up to 7    │
+│              │          │                  │          │   hops)      │
+└──────────────┘          └──────────────────┘          └──────────────┘
+                                                              │
+                                                         LoRa hops
+                                                              │
+                                                        ┌──────────────┐
+                                                        │  Other Nodes │
+                                                        │  + Phones    │
+                                                        │  + Glasses   │
+                                                        └──────────────┘
+```
+
+## BLE Protocol
+
+The glasses connect to a Meshtastic node using the standard Meshtastic BLE service:
+
+| Field | Value |
+|---|---|
+| Service UUID | `6ba1b218-15a8-461f-9fa8-5dcae273eafd` |
+| ToRadio Characteristic | `f75c76d2-129e-4dad-a1dd-7866124401e7` (Write) |
+| FromRadio Characteristic | `2c55e69e-4993-11ed-b878-0242ac120002` (Read/Notify) |
+| FromNum Characteristic | `ed9da18c-a800-4f66-a670-aa7547e34453` (Notify) |
+| MTU | Negotiated, typically 512 bytes |
+
+### Protobuf Format
+
+All messages use Meshtastic's protobuf schema:
+
+```protobuf
+message ToRadio {
+  oneof payload_variant {
+    MeshPacket packet = 1;        // Send a mesh packet
+    uint32 want_config_id = 3;    // Request config
+    Disconnect disconnect = 4;     // Disconnect cleanly
+  }
+}
+
+message MeshPacket {
+  uint32 from = 1;
+  uint32 to = 2;
+  uint32 channel = 3;
+  Data decoded = 4;
+  uint32 id = 6;
+  uint32 hop_limit = 7;          // Default: 3, max: 7
+}
+
+message Data {
+  PortNum portnum = 1;           // TEXT_MESSAGE_APP = 1
+  bytes payload = 2;             // UTF-8 text or binary
+}
+```
+
+## Message Types
+
+| Type | PortNum | Description |
+|---|---|---|
+| Text Message | `TEXT_MESSAGE_APP (1)` | UTF-8 text, max 237 bytes |
+| Position | `POSITION_APP (3)` | GPS lat/lon/alt + timestamp |
+| Telemetry | `TELEMETRY_APP (67)` | Battery, voltage, temperature |
+| Nodeinfo | `NODEINFO_APP (4)` | Device name, hardware model |
+| Traceroute | `TRACEROUTE_APP (70)` | Multi-hop path discovery |
+
+## Connection Flow
+
+```
+Glasses                    Meshtastic Node
+   │                             │
+   │──── BLE Scan ──────────────▶│
+   │     (filter: service UUID)  │
+   │                             │
+   │◀─── BLE Connect ───────────│
+   │     (negotiate MTU 512)     │
+   │                             │
+   │──── Subscribe FromNum ─────▶│
+   │     (notifications)         │
+   │                             │
+   │──── want_config_id=1 ──────▶│
+   │                             │
+   │◀─── Config packets ────────│
+   │     (radio, channel, etc.)  │
+   │                             │
+   │◀─── ConfigComplete ────────│
+   │                             │
+   │──── ToRadio(text) ─────────▶│
+   │                             │──── LoRa TX ────▶ mesh
+   │                             │
+   │◀─── FromRadio(text) ───────│◀─── LoRa RX ◀──── mesh
+   │                             │
+```
+
+## Code Example
+
+```kotlin
+import com.arglasses.sdk.mesh.MeshtasticClient
+import com.arglasses.sdk.mesh.MeshMessage
+import com.arglasses.sdk.mesh.ConnectionState
+
+class MeshActivity : AppCompatActivity() {
+
+    private lateinit var meshClient: MeshtasticClient
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        meshClient = MeshtasticClient.Builder(this)
+            .setAutoReconnect(true)
+            .setHopLimit(3)               // Max relay hops
+            .setChannel(0)                // Primary channel
+            .build()
+
+        // Listen for incoming messages
+        meshClient.onMessageReceived { message: MeshMessage ->
+            when (message.portnum) {
+                PortNum.TEXT_MESSAGE_APP -> {
+                    val text = message.payload.toString(Charsets.UTF_8)
+                    val sender = message.senderName ?: message.from.toString(16)
+                    glassesDisplay.showNotification("$sender: $text")
+                }
+                PortNum.POSITION_APP -> {
+                    val pos = Position.parseFrom(message.payload)
+                    mapOverlay.updatePeerLocation(message.from, pos)
+                }
+                PortNum.TELEMETRY_APP -> {
+                    val tel = Telemetry.parseFrom(message.payload)
+                    Log.d("Mesh", "Node ${message.from} battery: ${tel.batteryLevel}%")
+                }
+            }
+        }
+
+        // Listen for connection state changes
+        meshClient.onConnectionStateChanged { state: ConnectionState ->
+            when (state) {
+                ConnectionState.SCANNING -> showStatus("Scanning for nodes...")
+                ConnectionState.CONNECTING -> showStatus("Connecting...")
+                ConnectionState.CONNECTED -> showStatus("Mesh connected ✓")
+                ConnectionState.DISCONNECTED -> showStatus("Disconnected")
+                ConnectionState.CONFIGURING -> showStatus("Loading mesh config...")
+            }
+        }
+    }
+
+    // Start scanning and connect to nearest node
+    fun connectToMesh() {
+        meshClient.startScan()  // Auto-connects to strongest signal
+    }
+
+    // Send a text message to the mesh
+    fun sendMessage(text: String) {
+        meshClient.sendText(
+            text = text,
+            destination = MeshtasticClient.BROADCAST,  // 0xFFFFFFFF
+            channel = 0,
+            wantAck = true
+        )
+    }
+
+    // Send position beacon
+    fun broadcastPosition(lat: Double, lon: Double, alt: Int) {
+        meshClient.sendPosition(
+            latitude = lat,
+            longitude = lon,
+            altitude = alt,
+            timestamp = System.currentTimeMillis() / 1000
+        )
+    }
+
+    override fun onDestroy() {
+        meshClient.disconnect()
+        super.onDestroy()
+    }
+}
+```
+
+## BitChat Integration
+
+The Meshtastic mesh layer serves as the **offline transport** for [BitChat](/docs/bitchat) decentralized messaging. When BitChat is enabled:
+
+- Text messages are wrapped in BitChat's encrypted envelope before transmission
+- Encryption: Noise_XX_25519_ChaChaPoly_SHA256
+- Messages use `TEXT_MESSAGE_APP` portnum (1) for compatibility
+- BitChat peers on the mesh automatically decrypt and display messages
+- Internet-connected nodes can bridge messages to Nostr relays
+
+See the [BitChat documentation](/docs/bitchat) for encryption and relay details.
+
+## Range & Performance
+
+| Scenario | Typical Range | Notes |
+|---|---|---|
+| Urban (buildings) | 1–3 km | Per hop, walls attenuate signal |
+| Suburban | 3–5 km | Houses, trees, moderate obstruction |
+| Rural / line-of-sight | 5–10 km | Open terrain, elevated nodes |
+| With repeater nodes | 10–70 km | 7 hops × 10km each (theoretical max) |
+
+| Parameter | Value |
+|---|---|
+| Frequency | 915 MHz (US) / 868 MHz (EU) / 433 MHz (Asia) |
+| Bandwidth | ~250 bps (Long-Fast) to ~21 kbps (Short-Fast) |
+| Max message size | 237 bytes (single packet) |
+| Max hops | 7 |
+| Battery (ESP32 node) | 2–7 days on 18650 cell |
+
+## API Endpoints
+
+### POST `/api/v1/mesh/send`
+
+Send a text message over the mesh network.
+
+### GET `/api/v1/mesh/messages`
+
+Retrieve received mesh messages.
+
+### GET `/api/v1/mesh/status`
+
+Get current mesh connection status and node info.

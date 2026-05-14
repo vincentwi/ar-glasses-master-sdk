@@ -1,0 +1,180 @@
+---
+title: AI Super-Resolution for AR Glasses
+subtitle: Real-time AI-powered digital zoom using ultra-lightweight neural networks
+slug: super-resolution
+---
+
+## Overview
+
+AR glasses cameras are constrained by tiny sensor modules — typically 720p or 1080p with fixed focal-length lenses. AI super-resolution provides **lossless digital zoom** by cropping the camera feed and upscaling it with a neural network, delivering sharp detail that optical zoom cannot achieve at this form factor.
+
+The SDK integrates **XLSR** (Extremely Lightweight Super-Resolution), a model with only **28,000 parameters** (45KB on disk) that runs in real-time on mobile NPUs.
+
+## How It Works
+
+```
+┌─────────────┐    ┌──────────┐    ┌──────────────┐    ┌──────────────┐
+│  Camera2     │───▶│  Crop    │───▶│  XLSR 3×     │───▶│  Display     │
+│  1080p feed  │    │  ROI     │    │  Upscale     │    │  to HUD      │
+└─────────────┘    └──────────┘    └──────────────┘    └──────────────┘
+```
+
+1. **Capture** — Camera2 API grabs frames at native resolution (1080p / 720p)
+2. **Crop** — Region of interest is extracted based on `zoom_level` (1.0–10.0×)
+3. **Upscale** — XLSR neural network upscales the crop by 3× with learned detail synthesis
+4. **Display** — Upscaled frame is rendered to the AR glasses HUD
+
+## Performance
+
+| Metric | XLSR (Default) | Real-ESRGAN |
+|---|---|---|
+| Parameters | 28K | 16.7M |
+| Model size | 45KB | 64MB |
+| Scale factor | 3× | 4× |
+| Latency (Snapdragon XR2 NPU) | ~10ms | ~180ms |
+| Latency (GPU fallback) | ~15ms | ~350ms |
+| Quality (PSNR) | 30.2 dB | 33.8 dB |
+| Suitable for real-time | ✅ Yes | ❌ No (batch only) |
+
+XLSR is the default for real-time zoom. Real-ESRGAN can be used for **photo capture mode** where latency is not critical.
+
+## Model Options
+
+### XLSR — Real-Time (Recommended)
+
+- Architecture: Residual blocks with pixel-shuffle upsampling
+- Input: Any resolution crop (dynamically sized)
+- Output: 3× upscaled
+- Quantization: INT8 via TFLite, runs on NNAPI delegate
+- Memory: ~2MB runtime
+
+### Real-ESRGAN — High Quality
+
+- Architecture: RRDB (Residual-in-Residual Dense Block)
+- Input: Fixed 128×128 tiles (tiled processing)
+- Output: 4× upscaled
+- Quantization: FP16
+- Memory: ~256MB runtime
+- Best for: Still photo enhancement, offline processing
+
+## Integration
+
+The engine uses **TensorFlow Lite** with the **NNAPI delegate** for hardware acceleration on Qualcomm Snapdragon XR2:
+
+```
+TFLite Runtime
+  └── NNAPI Delegate
+       └── Snapdragon XR2 HTP (Hexagon Tensor Processor)
+            └── INT8 quantized inference @ ~10ms
+```
+
+### Dependencies
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+}
+```
+
+## Code Example
+
+```kotlin
+import com.arglasses.sdk.superresolution.SuperResolutionEngine
+import com.arglasses.sdk.superresolution.ModelType
+
+class ZoomActivity : AppCompatActivity() {
+
+    private lateinit var srEngine: SuperResolutionEngine
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Initialize with XLSR for real-time zoom
+        srEngine = SuperResolutionEngine.Builder(this)
+            .setModel(ModelType.XLSR_X3)         // 28K params, 45KB
+            .setDelegate(Delegate.NNAPI)          // Snapdragon NPU
+            .setInputColorSpace(ColorSpace.YUV)   // Camera2 native
+            .setMaxConcurrentFrames(2)            // Double-buffer
+            .build()
+
+        srEngine.initialize()
+    }
+
+    // Process a camera frame with zoom
+    fun onCameraFrame(image: Image, zoomLevel: Float) {
+        // Crop ROI based on zoom level (1.0 = no crop, 10.0 = max zoom)
+        val crop = srEngine.cropRegionOfInterest(
+            image = image,
+            zoomLevel = zoomLevel,       // 1.0 – 10.0
+            centerX = 0.5f,              // Center of frame
+            centerY = 0.5f
+        )
+
+        // Upscale 3x with XLSR (~10ms on NPU)
+        val upscaled = srEngine.upscale(crop)
+
+        // Render to glasses display
+        glassesDisplay.renderBitmap(upscaled)
+    }
+
+    // Switch to high-quality mode for photo capture
+    fun captureEnhancedPhoto(image: Image) {
+        val hqEngine = SuperResolutionEngine.Builder(this)
+            .setModel(ModelType.REAL_ESRGAN_X4)
+            .setDelegate(Delegate.GPU)
+            .build()
+
+        val enhanced = hqEngine.upscale(image)  // ~350ms, 4x quality
+        saveToDisk(enhanced)
+    }
+
+    override fun onDestroy() {
+        srEngine.release()
+        super.onDestroy()
+    }
+}
+```
+
+## API Endpoints
+
+The SDK exposes REST-style endpoints for super-resolution control:
+
+<EndpointRequestSnippet endpoint="POST /api/v1/camera/super-resolution" />
+
+### POST `/api/v1/camera/super-resolution`
+
+Trigger an AI-upscaled frame capture with the specified zoom level.
+
+**Request body:**
+```json
+{
+  "zoom_level": 3.0,
+  "model": "xlsr",
+  "center_x": 0.5,
+  "center_y": 0.5
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "frame_id": "fr_28a4c1",
+  "resolution": "1920x1440",
+  "upscale_factor": 3,
+  "latency_ms": 11.2,
+  "model_used": "xlsr_x3_int8"
+}
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| High latency (>30ms) | Check NNAPI delegate is active; fallback to GPU if NPU unavailable |
+| Artifacts at high zoom | Reduce `zoom_level`; switch to Real-ESRGAN for stills |
+| OOM on init | Ensure `setMaxConcurrentFrames(1)` on low-memory devices |
+| Black frames | Verify Camera2 permission and YUV format compatibility |

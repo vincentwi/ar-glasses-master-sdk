@@ -1,0 +1,237 @@
+---
+title: BitChat Decentralized Messaging
+subtitle: End-to-end encrypted messaging over mesh radio and Nostr relays
+slug: bitchat
+---
+
+## Overview
+
+BitChat is a **decentralized, encrypted messaging protocol** designed for AR glasses that operates over two complementary transports:
+
+- **Offline**: BLE → Meshtastic LoRa mesh (up to 7 hops, no internet required)
+- **Online**: Nostr relay network (290+ relays, global reach)
+
+Messages are end-to-end encrypted using the **Noise protocol framework**. There are no accounts, no phone numbers, no email addresses — identity is a Curve25519 keypair generated on-device.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      BitChat Protocol                        │
+│                                                              │
+│  ┌─────────────┐              ┌──────────────────────────┐  │
+│  │  Offline     │              │  Online                   │  │
+│  │  Transport   │              │  Transport                │  │
+│  │              │              │                           │  │
+│  │  Glasses     │              │  Glasses                  │  │
+│  │    ↕ BLE     │              │    ↕ WebSocket            │  │
+│  │  Meshtastic  │              │  Nostr Relay              │  │
+│  │    ↕ LoRa    │              │    ↕ NIP-04/NIP-44        │  │
+│  │  Mesh (7hop) │◀── Bridge ──▶│  290+ Relays              │  │
+│  │              │              │                           │  │
+│  └─────────────┘              └──────────────────────────┘  │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Encryption: Noise_XX_25519_ChaChaPoly_SHA256         │   │
+│  │  Identity:   Curve25519 keypair (no accounts needed)  │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Encryption
+
+BitChat uses the [Noise Protocol Framework](https://noiseprotocol.org/) for all message encryption:
+
+| Parameter | Value |
+|---|---|
+| Handshake pattern | `XX` (mutual authentication, no pre-shared keys) |
+| DH function | `25519` (Curve25519) |
+| Cipher | `ChaChaPoly` (ChaCha20-Poly1305) |
+| Hash | `SHA256` |
+| Full designation | `Noise_XX_25519_ChaChaPoly_SHA256` |
+
+### Key Exchange Flow
+
+```
+Alice (Glasses A)                    Bob (Glasses B)
+     │                                    │
+     │──── e ────────────────────────────▶│   (Alice's ephemeral key)
+     │                                    │
+     │◀─── e, ee, s, es ────────────────│   (Bob's ephemeral + static)
+     │                                    │
+     │──── s, se ────────────────────────▶│   (Alice's static key)
+     │                                    │
+     │◀════ Encrypted channel ══════════▶│   (ChaCha20-Poly1305)
+     │                                    │
+```
+
+After the Noise XX handshake completes, both parties have:
+- Mutual authentication (each knows the other's Curve25519 public key)
+- Forward secrecy (ephemeral keys are discarded)
+- A symmetric encryption key for the session
+
+## Privacy Model
+
+| Property | Implementation |
+|---|---|
+| Identity | Curve25519 keypair, generated on-device |
+| Account required | ❌ None — no email, phone, or username |
+| Metadata | Minimal — mesh packets carry only sender node ID |
+| Message storage | Ephemeral on mesh; optional on Nostr relays |
+| IP address | Hidden from peers (LoRa has no IP layer) |
+| Forward secrecy | ✅ Noise XX ephemeral keys |
+| Deniability | ✅ No long-term signatures on messages |
+
+## Meshtastic Integration
+
+BitChat uses the Meshtastic mesh network as its **offline transport layer**:
+
+### Message Wrapping
+
+```
+┌─────────────────────────────────────────────┐
+│  Meshtastic MeshPacket                       │
+│  ├── portnum: TEXT_MESSAGE_APP (1)           │
+│  └── payload:                                │
+│       ┌─────────────────────────────────┐   │
+│       │  BitChat Envelope                │   │
+│       │  ├── version: 1                  │   │
+│       │  ├── sender_pubkey: [32 bytes]   │   │
+│       │  ├── nonce: [24 bytes]           │   │
+│       │  └── ciphertext: [≤180 bytes]    │   │
+│       └─────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+```
+
+- BitChat encrypted envelopes are sent as `TEXT_MESSAGE_APP` (portnum 1) payloads
+- Max ciphertext: ~180 bytes per packet (237 byte Meshtastic limit minus envelope overhead)
+- Long messages are chunked and reassembled
+- Non-BitChat Meshtastic users see the raw ciphertext (unreadable)
+- Bridge nodes can relay encrypted payloads between mesh and Nostr
+
+### Bridging Mesh ↔ Nostr
+
+When a Meshtastic node has internet access (via phone companion app or Wi-Fi gateway):
+
+1. Encrypted BitChat mesh packets are forwarded to configured Nostr relays
+2. Nostr messages addressed to mesh-reachable pubkeys are injected into the mesh
+3. Bridge preserves E2E encryption — the bridge cannot read message content
+
+## Nostr Integration
+
+For internet-connected operation, BitChat uses the [Nostr](https://nostr.com/) protocol:
+
+| Feature | Implementation |
+|---|---|
+| Event kind | `kind: 4` (NIP-04 encrypted DM) or `kind: 1059` (NIP-44 gift-wrap) |
+| Relay count | 290+ public relays |
+| Identity | Same Curve25519 key converted to Nostr secp256k1 via deterministic derivation |
+| Discovery | Pubkey exchange via QR code, NFC tap, or mesh broadcast |
+
+## AR Glasses Use Case
+
+BitChat on AR glasses enables **silent, hands-free mesh communication**:
+
+### Field Communication
+- Team coordination without cellular infrastructure
+- Silent messaging via gaze-type or gesture input
+- Position sharing overlaid on AR map view
+- Works in RF-denied environments (mesh stores-and-forwards)
+
+### Privacy-Sensitive Scenarios
+- No SIM card or phone number required
+- No cloud accounts or servers
+- Messages auto-expire on mesh (no persistent storage)
+- Plausible deniability — no signatures on messages
+
+### Display Integration
+- Incoming messages shown as HUD notifications
+- Sender identified by short pubkey hash or nickname
+- Mesh node status shown in status bar (connected nodes, signal strength)
+- Quick-reply via predefined messages or voice-to-text
+
+## Code Example
+
+```kotlin
+import com.arglasses.sdk.bitchat.BitChatClient
+import com.arglasses.sdk.bitchat.Identity
+import com.arglasses.sdk.bitchat.Transport
+
+class BitChatActivity : AppCompatActivity() {
+
+    private lateinit var chat: BitChatClient
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Generate or load identity (Curve25519 keypair)
+        val identity = Identity.loadOrCreate(this)
+        Log.d("BitChat", "My pubkey: ${identity.publicKeyHex}")
+
+        chat = BitChatClient.Builder(this)
+            .setIdentity(identity)
+            .addTransport(Transport.MESH)       // BLE → Meshtastic → LoRa
+            .addTransport(Transport.NOSTR)      // WebSocket → Nostr relays
+            .setNostrRelays(listOf(
+                "wss://relay.damus.io",
+                "wss://nos.lol",
+                "wss://relay.snort.social"
+            ))
+            .build()
+
+        // Receive messages from any transport
+        chat.onMessage { message ->
+            val sender = message.senderNickname ?: message.senderPubkeyShort
+            val transport = if (message.viaMesh) "mesh" else "nostr"
+            glassesDisplay.showNotification(
+                title = "$sender ($transport)",
+                body = message.plaintext
+            )
+        }
+
+        chat.connect()
+    }
+
+    // Send encrypted message (auto-routes via best transport)
+    fun sendMessage(recipientPubkey: String, text: String) {
+        chat.send(
+            to = recipientPubkey,
+            message = text,
+            preferMesh = true     // Try mesh first, fall back to Nostr
+        )
+    }
+
+    // Broadcast to all nearby mesh peers
+    fun broadcastToMesh(text: String) {
+        chat.broadcast(
+            message = text,
+            transport = Transport.MESH,
+            hopLimit = 3
+        )
+    }
+
+    // Share identity via QR code for peer discovery
+    fun showMyQR() {
+        val qr = chat.identity.toQRBitmap(size = 256)
+        glassesDisplay.renderBitmap(qr)
+    }
+
+    override fun onDestroy() {
+        chat.disconnect()
+        super.onDestroy()
+    }
+}
+```
+
+## Protocol Comparison
+
+| Feature | BitChat (Mesh) | BitChat (Nostr) | Signal | iMessage |
+|---|---|---|---|---|
+| Internet required | ❌ | ✅ | ✅ | ✅ |
+| Account required | ❌ | ❌ | Phone # | Apple ID |
+| E2E encrypted | ✅ | ✅ | ✅ | ✅ |
+| Forward secrecy | ✅ | ✅ | ✅ | ✅ |
+| Decentralized | ✅ | ✅ | ❌ | ❌ |
+| Range (offline) | 1–70 km | N/A | N/A | N/A |
+| Metadata minimal | ✅ | Partial | Partial | ❌ |
+| AR glasses native | ✅ | ✅ | ❌ | ❌ |

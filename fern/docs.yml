@@ -13,6 +13,14 @@ navigation:
       - page: Capabilities Matrix
         path: ./pages/capabilities.mdx
   - api: API Reference
+  - section: Advanced Features
+    contents:
+      - page: AI Super-Resolution
+        path: ./pages/super-resolution.mdx
+      - page: Mesh Networking
+        path: ./pages/mesh-networking.mdx
+      - page: BitChat Messaging
+        path: ./pages/bitchat.mdx
   - section: Reference Guides
     contents:
       - page: USB VID/PID Registry
